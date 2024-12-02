@@ -1,6 +1,7 @@
 body {
     font-size: 22px;
     background-color: gold;
+    border: 5px solid red;
 }
 h1, h2 {
     color: blue;
