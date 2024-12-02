@@ -1,7 +1,24 @@
+body {
+    font-size: 22px;
+    background-color: gold;
+}
+h1, h2 {
+    color: blue;
+}
+
 p {
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
-    font-size: 300;    
-    color:chocolate
-        
-        
+    font-size: 100px;    
+    color:rgb(192, 164, 145);      
+}
+p span {
+    text-transform: uppercase;
+    background-color: gold;
+}
+
+.gray {
+    color: gray;
+    font-size: 32px;
+}
+#second {
+    font-style: italic;
 }
