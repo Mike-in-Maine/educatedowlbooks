@@ -1,7 +1,7 @@
 body {
     font-size: 22px;
-    background-color: gold;
-    border: 5px solid red;
+    background-color: rgb(174, 218, 203);
+    border: 5px solid rgba(255, 0, 0, 0.185);
 }
 h1, h2 {
     color: blue;
@@ -13,11 +13,11 @@ p {
 }
 p span {
     text-transform: uppercase;
-    background-color: gold;
+    background-color: rgb(128, 110, 13);
 }
 
 .gray {
-    color: gray;
+    color: rgb(255, 0, 0);
     font-size: 32px;
 }
 #second {

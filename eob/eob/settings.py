@@ -25,7 +25,6 @@ env = environ.Env()
 environ.Env.read_env()
 
 # Retrieve the SECRET_KEY from the environment
-#SECRET_KEY = 'django-insecure-!@xjuf-h(^&&-(#e6(%u4**(#s+bk)2&23$r*3$m9-wl7m+r=a'
 SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -124,7 +123,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / "educatedowlbooks/static/",
+
 
 ]
 
