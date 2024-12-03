@@ -1,25 +1,32 @@
 body {
     font-size: 22px;
-    background-color: rgb(174, 218, 203);
-    border: 5px solid rgba(255, 0, 0, 0.185);
-}
-h1, h2 {
-    color: blue;
+    background-color: rgb(245, 245, 240); 
+    border: 5px solid rgba(200, 200, 200, 0.5); 
 }
 
-p {
-    font-size: 100px;    
-    color:rgb(253, 125, 40);      
+button, input, textarea, select {
+    font: inherit;
 }
+
+h1, h2 {
+    color: rgb(0, 131, 17); 
+}
+p {
+    font-size: 20px;    
+    color: rgb(100, 7, 7);
+}
+
 p span {
     text-transform: uppercase;
-    background-color: rgb(128, 110, 13);
+    background-color: rgb(240, 230, 200); 
 }
 
 .gray {
-    color: rgb(255, 0, 0);
-    font-size: 32px;
+    color: rgb(120, 120, 120); 
+    font-size: 18px;
 }
+
 #second {
     font-style: italic;
+    color: rgb(80, 80, 80); 
 }
