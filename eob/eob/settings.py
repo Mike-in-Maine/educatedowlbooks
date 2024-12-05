@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'sellers',
     'accounts',
     'catalog',
-    'reviews'
+    'reviews',
+    'user_management',
 ]
 
 MIDDLEWARE = [
