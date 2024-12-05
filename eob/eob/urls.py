@@ -1,7 +1,7 @@
 
 from django.contrib import admin
 from django.urls import path, include
-from educatedowlbooks import views
+from marketplace import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
