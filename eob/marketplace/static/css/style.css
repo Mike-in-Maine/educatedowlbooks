@@ -1,3 +1,29 @@
-body {
-font-size: 44;
+h1{
+    font-family: Roboto, sans-serif;
+    border: 20px dashed rgb(192, 0, 0);
+    font-size: 3rem;
+    padding: 0.5em;
+}
+
+.container{
+    border: 2px dashed rebeccapurple;
+    font-size: 1.5rem;
+    margin-bottom: 2em;
+    margin-top: 1.5em;
+    padding: 1.5em;
+}
+
+body{
+    padding: 10%;
+    font-size: 2rem;
+    color: rgb(1, 43, 0);
+
+}
+input button{
+    font: inherit;
+}
+p{
+    text-decoration: none;
+    text-transform: capitalize;
+    font-family: Roboto, sans-serif;
 }
