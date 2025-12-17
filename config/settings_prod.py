@@ -1,8 +1,12 @@
 from .settings_base import *
 
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+    "educatedowlbooks.com",
+    "www.educatedowlbooks.com",
+]
+
 SECURE_SSL_REDIRECT = True
 
 SESSION_COOKIE_SECURE = True
