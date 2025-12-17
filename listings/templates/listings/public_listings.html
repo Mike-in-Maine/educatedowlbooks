@@ -1,0 +1,34 @@
+{% extends "main/base.html" %}
+
+{% block title %}Books for Sale{% endblock %}
+
+{% block content %}
+
+<h2>Books for Sale</h2>
+
+<form method="get">
+    <input
+        type="text"
+        name="q"
+        placeholder="Search by title, author, ISBN"
+        value="{{ query }}"
+        style="width: 300px;"
+    />
+    <button type="submit">Search</button>
+</form>
+
+<hr>
+
+{% for listing in listings %}
+    <div style="border-bottom: 1px solid #ddd; padding: 15px 0;">
+        <strong>{{ listing.book.title }}</strong><br>
+        {{ listing.book.author }}<br>
+        Condition: {{ listing.get_condition_display }}<br>
+        <strong>${{ listing.price }}</strong><br>
+        <small>Seller: {{ listing.seller.display_name }}</small>
+    </div>
+{% empty %}
+    <p>No books found.</p>
+{% endfor %}
+
+{% endblock %}
