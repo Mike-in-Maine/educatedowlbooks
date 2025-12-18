@@ -1,6 +1,9 @@
 from .settings_base import *
 import os
-DEBUG = True
+
+SECRET_KEY = os.environ["SECRET_KEY"]
+
+DEBUG = False
 
 ALLOWED_HOSTS = [
     "educatedowlbooks.com",
