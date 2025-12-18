@@ -4,5 +4,5 @@ from . import views
 
 
 urlpatterns = [
-    path("", views.public_listings, name="public_listings"),
+    path("", public_listings, name="public_listings"),
 ]
