@@ -20,15 +20,32 @@
 <hr>
 
 {% for listing in listings %}
-    <div style="border-bottom: 1px solid #ddd; padding: 15px 0;">
-        <strong>{{ listing.book.title }}</strong><br>
-        {{ listing.book.author }}<br>
-        Condition: {{ listing.get_condition_display }}<br>
-        <strong>${{ listing.price }}</strong><br>
-        <small>Seller: {{ listing.seller.display_name }}</small>
+    <div style="display: flex; gap: 15px; border-bottom: 1px solid #ddd; padding: 15px 0;">
+
+        {% if listing.book.cover_image %}
+            <img
+                src="{{ listing.book.cover_image.url }}"
+                alt="{{ listing.book.title }}"
+                style="width: 80px; height: auto; object-fit: contain;"
+            >
+        {% else %}
+            <div style="width: 80px; height: 120px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                No cover
+            </div>
+        {% endif %}
+
+        <div>
+            <strong>{{ listing.book.title }}</strong><br>
+            {{ listing.book.author }}<br>
+            Condition: {{ listing.get_condition_display }}<br>
+            <strong>${{ listing.price }}</strong><br>
+            <small>Seller: {{ listing.seller.display_name }}</small>
+        </div>
+
     </div>
 {% empty %}
     <p>No books found.</p>
 {% endfor %}
+
 
 {% endblock %}

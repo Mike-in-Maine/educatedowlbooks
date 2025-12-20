@@ -13,7 +13,28 @@
         We specialize in rare, academic, and historical books.
     </p>
 
-    <p>
+    {% if books %}
+        <h3>Sample from the catalog</h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
+            {% for book in books %}
+                <div style="text-align: center;">
+                    {% if book.cover_image %}
+                        <img
+                            src="{{ book.cover_image.url }}"
+                            alt="{{ book.title }}"
+                            style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
+                        >
+                    {% endif %}
+                    <div style="font-size: 0.9rem; margin-top: .5rem;">
+                        {{ book.title|truncatechars:40 }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <p style="margin-top: 2rem;">
         <a href="{% url 'public_listings' %}">
             Browse books currently for sale
         </a>

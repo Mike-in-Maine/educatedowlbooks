@@ -1,34 +1,24 @@
 import csv
 import time
 import requests
+from pathlib import Path
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from catalog.models import Book
 
+
 OPENLIB_URL = "https://openlibrary.org/api/books"
+MAX_COVER_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
 class Command(BaseCommand):
     help = "Import books into catalog from ISBN-10 CSV using Open Library (slow & safe)"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "csv_file",
-            type=str,
-            help="CSV file containing an 'isbn10' column",
-        )
-        parser.add_argument(
-            "--batch-size",
-            type=int,
-            default=1,
-            help="ISBNs per request (default: 1)",
-        )
-        parser.add_argument(
-            "--sleep",
-            type=float,
-            default=1.0,
-            help="Seconds to sleep between requests",
-        )
+        parser.add_argument("csv_file", type=str)
+        parser.add_argument("--batch-size", type=int, default=1)
+        parser.add_argument("--sleep", type=float, default=1.0)
 
     def handle(self, *args, **options):
         csv_file = options["csv_file"]
@@ -37,7 +27,6 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Starting Open Library catalog import"))
 
-        # Load ISBNs from CSV
         with open(csv_file, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             isbns = [
@@ -71,7 +60,7 @@ class Command(BaseCommand):
         bibkeys = ",".join(f"ISBN:{isbn}" for isbn in to_fetch)
 
         try:
-            response = requests.get(
+            r = requests.get(
                 OPENLIB_URL,
                 params={
                     "bibkeys": bibkeys,
@@ -84,25 +73,19 @@ class Command(BaseCommand):
             self.stderr.write(f"[{offset}/{total}] request failed: {e}")
             return
 
-        if response.status_code != 200:
-            self.stderr.write(
-                f"[{offset}/{total}] OpenLibrary error {response.status_code}"
-            )
+        if r.status_code != 200:
+            self.stderr.write(f"[{offset}/{total}] OpenLibrary error")
             return
 
-        data = response.json()
+        data = r.json()
         created = 0
 
         for key, info in data.items():
             isbn10 = key.replace("ISBN:", "")
 
             title = info.get("title", "").strip()
-            author = ", ".join(
-                a.get("name", "") for a in info.get("authors", [])
-            )
-            publisher = (
-                info.get("publishers", [{}])[0].get("name", "").strip()
-            )
+            author = ", ".join(a.get("name", "") for a in info.get("authors", []))
+            publisher = info.get("publishers", [{}])[0].get("name", "").strip()
 
             publication_year = None
             if "publish_date" in info:
@@ -113,15 +96,55 @@ class Command(BaseCommand):
             if not title:
                 continue
 
-            Book.objects.create(
+            book = Book.objects.create(
                 isbn10=isbn10,
                 title=title,
                 author=author,
                 publisher=publisher,
                 publication_year=publication_year,
             )
+
+            # ---- COVER DOWNLOAD ----
+            cover_url = None
+            if "cover" in info:
+                cover_url = (
+                    info["cover"].get("large")
+                    or info["cover"].get("medium")
+                    or info["cover"].get("small")
+                )
+
+            if cover_url:
+                self.download_cover(book, cover_url)
+
             created += 1
 
         self.stdout.write(
             f"[{offset}/{total}] fetched={len(to_fetch)} created={created}"
         )
+
+    def download_cover(self, book, url):
+        try:
+            r = requests.get(url, stream=True, timeout=20)
+        except requests.RequestException:
+            return
+
+        if r.status_code != 200:
+            return
+
+        content_length = int(r.headers.get("Content-Length", 0))
+        if content_length > MAX_COVER_BYTES:
+            return
+
+        subdir = book.isbn10[0]
+        cover_dir = Path(settings.MEDIA_ROOT) / "catalog" / "covers" / subdir
+        cover_dir.mkdir(parents=True, exist_ok=True)
+
+        cover_path = cover_dir / f"{book.isbn10}.jpg"
+
+        with open(cover_path, "wb") as f:
+            for chunk in r.iter_content(8192):
+                f.write(chunk)
+
+        # Optional: save path to model if you add ImageField later
+        # book.cover_image = f"covers/{subdir}/{book.isbn10}.jpg"
+        # book.save(update_fields=["cover_image"])

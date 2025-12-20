@@ -15,4 +15,8 @@ staticfiles/
 .DS_Store
 Thumbs.db
 
+# Book Covers and other media files
+/media/
+/media/**
+
 73B16.txt

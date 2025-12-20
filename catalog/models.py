@@ -29,6 +29,19 @@ class Book(models.Model):
         help_text="Hardcover, Paperback, etc.",
     )
 
+    cover_image = models.ImageField(
+        upload_to="catalog/covers/",
+        blank=True,
+        null=True,
+        help_text="Cover image of the book",
+    )
+
+    cover_openlibrary_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
