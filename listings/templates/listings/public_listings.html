@@ -25,7 +25,7 @@
         {% if listing.book.cover_image %}
             <img
                 src="{{ listing.book.cover_image.url }}"
-                alt="{{ listing.book.title }}"
+                alt="{{ listing.listings.isbn10 }}"
                 style="width: 80px; height: auto; object-fit: contain;"
             >
         {% else %}

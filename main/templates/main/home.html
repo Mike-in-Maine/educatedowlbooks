@@ -22,12 +22,25 @@
                     {% if book.cover_image %}
                         <img
                             src="{{ book.cover_image.url }}"
-                            alt="{{ book.title }}"
+                            alt="{{ book.isbn10 }}"
                             style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
                         >
                     {% endif %}
                     <div style="font-size: 0.9rem; margin-top: .5rem;">
                         {{ book.title|truncatechars:40 }}
+                        <br>
+                        {{ book.publisher }}
+                        <br>
+                        {{ book.year }}
+                        <br>
+                        {{ book.language }}
+                        <br>
+                        {{ book.pages }} pages
+                        <br>
+                        {{ book.isbn13 }}
+                        <br>
+                        {{ book.author|truncatechars:30 }}
+                        {{ book.isbn10 }}
                     </div>
                 </div>
             {% endfor %}
