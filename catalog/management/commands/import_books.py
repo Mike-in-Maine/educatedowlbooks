@@ -4,6 +4,7 @@ import requests
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
+from django.core.files.base import ContentFile
 from django.conf import settings
 from catalog.models import Book
 
@@ -124,27 +125,27 @@ class Command(BaseCommand):
 
     def download_cover(self, book, url):
         try:
-            r = requests.get(url, stream=True, timeout=20)
+            # We use a short timeout to prevent the script from hanging
+            r = requests.get(url, timeout=15)
+            if r.status_code != 200:
+                return
         except requests.RequestException:
             return
 
-        if r.status_code != 200:
+        # Check file size before processing
+        if len(r.content) > MAX_COVER_BYTES:
+            self.stderr.write(f"Cover for {book.isbn10} too large, skipping.")
             return
 
-        content_length = int(r.headers.get("Content-Length", 0))
-        if content_length > MAX_COVER_BYTES:
-            return
+        # Use Django's ContentFile to wrap the raw bytes
+        # The filename here will be passed to your model's get_catalog_upload_path function
+        file_name = f"{book.isbn10}.jpg"
+        
+        # This one line handles:
+        # 1. Running your get_catalog_upload_path function
+        # 2. Creating the 0/1/2/ subdirectories automatically
+        # 3. Saving the file to the root /media/ folder
+        # 4. Updating the book record in the database
+        book.cover_image.save(file_name, ContentFile(r.content), save=True)
 
-        subdir = book.isbn10[0]
-        cover_dir = Path(settings.MEDIA_ROOT) / "catalog" / "covers" / subdir
-        cover_dir.mkdir(parents=True, exist_ok=True)
-
-        cover_path = cover_dir / f"{book.isbn10}.jpg"
-
-        with open(cover_path, "wb") as f:
-            for chunk in r.iter_content(8192):
-                f.write(chunk)
-
-        # Optional: save path to model if you add ImageField later
-        # book.cover_image = f"covers/{subdir}/{book.isbn10}.jpg"
-        # book.save(update_fields=["cover_image"])
+        self.stdout.write(f" Successfully downloaded cover for {book.isbn10}")

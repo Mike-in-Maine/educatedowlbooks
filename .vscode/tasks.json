@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Python Server",
+            "type": "shell",
+            "command": "python manage.py runserver",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        }
+    ]
+}
