@@ -15,6 +15,7 @@ def get_catalog_upload_path(instance, filename):
     
     # Returns 'catalog/covers/0/1/2/filename.jpg'
     return os.path.join('catalog', 'covers', *chars, filename)
+    return os.path.join('catalog', 'covers', *isbn[:3], filename)
 
 class Book(models.Model):
     isbn10 = models.CharField(
