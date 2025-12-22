@@ -218,7 +218,15 @@ from .models import Book
 
 def book_detail(request, isbn10):
     book = get_object_or_404(Book, isbn10=isbn10)
-    return render(request, "book_detail.html", {"book": book})
+    listings = book.listings.select_related("seller").order_by("price")
+    return render(
+        request,
+        "book_detail.html",
+        {
+            "book": book,
+            "listings": listings,
+        }
+    )
 
 
 ====================
@@ -832,11 +840,13 @@ FILE: listings\templates\listings\public_listings.html
     <div style="display: flex; gap: 15px; border-bottom: 1px solid #ddd; padding: 15px 0;">
 
         {% if listing.book.cover_image %}
-            <img
-                src="{{ listing.book.cover_image.url }}"
-                alt="{{ listing.listings.isbn10 }}"
-                style="width: 80px; height: auto; object-fit: contain;"   
-            >
+            <a href="{% url 'book_detail' listing.book.isbn10 %}">
+                <img
+                    src="{{ listing.book.cover_image.url }}"
+                    alt="{{ listing.book.title }}"
+                    style="width: 80px; height: auto; object-fit: contain;"
+                />
+            </a>
             
         {% else %}
             <div style="width: 80px; height: 120px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 12px;">
@@ -1051,11 +1061,14 @@ FILE: main\templates\main\home.html
             {% for book in books %}
                 <div style="text-align: center;">
                     {% if book.cover_image %}
-                        <img
-                            src="{{ book.cover_image.url }}"
-                            alt="{{ book.isbn10 }}"
-                            style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
-                        >
+                        <a href="{% url 'book_detail' book.isbn10 %}">
+                            <img
+                                src="{{ book.cover_image.url }}"
+                                alt="{{ book.title }}"
+                                style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
+                            >
+                        </a>
+
                     {% endif %}
                     <div style="font-size: 0.9rem; margin-top: .5rem;">
                         {{ book.title|truncatechars:40 }}
