@@ -201,14 +201,24 @@ from django.test import TestCase
 ====================
 FILE: catalog\urls.py
 ====================
+# catalog/urls.py
+from django.urls import path
+from .views import book_detail
 
+urlpatterns = [
+    path("<str:isbn10>/", book_detail, name="book_detail"),
+]
 
 ====================
 FILE: catalog\views.py
 ====================
-from django.shortcuts import render
+# catalog/views.py
+from django.shortcuts import get_object_or_404, render
+from .models import Book
 
-# Create your views here.
+def book_detail(request, isbn10):
+    book = get_object_or_404(Book, isbn10=isbn10)
+    return render(request, "book_detail.html", {"book": book})
 
 
 ====================
@@ -623,6 +633,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("main.urls")),
     path("books/", include("listings.urls")),
+    path("catalog/", include("catalog.urls")),
 
 ]
 
@@ -893,7 +904,6 @@ from .views import home
 
 urlpatterns = [
     path("", home, name="home"),
-    path("books/", include("listings.urls")),
 ]
 
 
