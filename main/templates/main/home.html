@@ -20,11 +20,14 @@
             {% for book in books %}
                 <div style="text-align: center;">
                     {% if book.cover_image %}
-                        <img
-                            src="{{ book.cover_image.url }}"
-                            alt="{{ book.isbn10 }}"
-                            style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
-                        >
+                        <a href="{% url 'book_detail' book.isbn10 %}">
+                            <img
+                                src="{{ book.cover_image.url }}"
+                                alt="{{ book.title }}"
+                                style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
+                            >
+                        </a>
+
                     {% endif %}
                     <div style="font-size: 0.9rem; margin-top: .5rem;">
                         {{ book.title|truncatechars:40 }}
