@@ -1,0 +1,124 @@
+{% extends "main/base.html" %}
+
+{% block title %}{{ book.title }} | Educated Owl Books{% endblock %}
+
+{% block content %}
+<style>
+    .book-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 2.5rem;
+        margin-top: 1rem;
+    }
+
+    .book-cover img {
+        width: 100%;
+        height: auto;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .book-meta-stats {
+        display: flex;
+        gap: 1rem;
+        margin: 1.5rem 0;
+        flex-wrap: wrap;
+    }
+
+    .stat-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        background: #eee;
+    }
+
+    .stat-rating { background: #fff3cd; color: #856404; }
+    .stat-want { background: #d1ecf1; color: #0c5460; }
+    .stat-read { background: #d4edda; color: #155724; }
+
+    .book-description {
+        margin: 2rem 0;
+        border-top: 1px solid #ddd;
+        padding-top: 1.5rem;
+    }
+
+    .meta-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+    }
+
+    .meta-table th {
+        text-align: left;
+        width: 30%;
+        padding: 0.5rem 0;
+        color: #666;
+    }
+
+    .btn-secondary {
+        display: inline-block;
+        padding: 0.6rem 1.2rem;
+        border: 1px solid #333;
+        text-decoration: none;
+        color: #333;
+        border-radius: 4px;
+        margin-top: 1rem;
+        transition: background 0.2s;
+    }
+
+    .btn-secondary:hover { background: #333; color: #fff; }
+
+    @media (max-width: 768px) {
+        .book-container { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="book-container">
+    <div class="book-cover">
+        {% if book.cover_image %}
+            <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
+        {% else %}
+            <div style="background:#eee; height:400px; display:flex; align-items:center; justify-content:center; color:#999;">
+                No Cover Image
+            </div>
+        {% endif %}
+        
+        <a href="https://camelcamelcamel.com/product/{{ book.isbn10 }}" target="_blank" class="btn-secondary" style="width:100%; text-align:center; box-sizing:border-box;">
+            📉 View Price History
+        </a>
+    </div>
+
+    <div class="book-info">
+        <h2 style="font-size: 2.2rem; margin-bottom: 0.5rem;">{{ book.title }}</h2>
+        <p style="font-size: 1.2rem; color: #555;">by <strong>{{ book.author }}</strong></p>
+
+        <div class="book-meta-stats">
+            <span class="stat-badge stat-rating">⭐ {{ book.rating_avg|default:"0.0" }}</span>
+            <span class="stat-badge stat-want">📖 {{ book.want_to_read_count }} Want to Read</span>
+            <span class="stat-badge stat-read">✅ {{ book.already_read_count }} Read</span>
+        </div>
+
+        <div class="book-description">
+            <h3 style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: #888;">Description</h3>
+            <p style="white-space: pre-wrap;">{{ book.description|default:"No description available for this edition." }}</p>
+        </div>
+
+        <table class="meta-table">
+            <tr><th>ISBN-10</th><td>{{ book.isbn10 }}</td></tr>
+            {% if book.amazon_asin %}
+                <tr><th>Amazon ASIN</th><td>{{ book.amazon_asin }}</td></tr>
+            {% endif %}
+            <tr><th>Publisher</th><td>{{ book.publisher }} ({{ book.publication_year }})</td></tr>
+            <tr><th>Pages</th><td>{{ book.pages|default:"Unknown" }}</td></tr>
+            <tr><th>Language</th><td>{{ book.language }}</td></tr>
+        </table>
+
+        {% if book.preview_url %}
+        <div style="margin-top: 2rem;">
+            <a href="{{ book.preview_url }}" target="_blank" class="btn-secondary">📖 Read Preview</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
