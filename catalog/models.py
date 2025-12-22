@@ -37,7 +37,7 @@ class Book(models.Model):
     )
 
     # Social & Stats
-    rating_avg = models.FloatField(default=0.0)
+    rating_avg = models.FloatField(default=2.0)
     want_to_read_count = models.IntegerField(default=0)
     currently_reading_count = models.IntegerField(default=0)
     already_read_count = models.IntegerField(default=0)
