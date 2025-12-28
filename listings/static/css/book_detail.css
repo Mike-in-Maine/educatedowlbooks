@@ -1,0 +1,154 @@
+.book-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2.5rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .book-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.book-cover img {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.no-cover {
+    background: #eee;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+}
+
+.full-width {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.book-title {
+    font-size: 2.2rem;
+    margin-bottom: 0.4rem;
+}
+
+.book-author {
+    font-size: 1.2rem;
+    color: #555;
+}
+
+.book-meta-stats {
+    display: flex;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    flex-wrap: wrap;
+}
+
+.stat-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #eee;
+}
+
+.stat-rating { background: #fff3cd; color: #856404; }
+.stat-want { background: #d1ecf1; color: #0c5460; }
+.stat-read { background: #d4edda; color: #155724; }
+
+.section-title {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #888;
+    margin-bottom: 0.8rem;
+}
+
+.available-copies {
+    margin: 2rem 0;
+    border-top: 1px solid #ddd;
+    padding-top: 1.5rem;
+}
+
+.copies-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.copies-table th {
+    text-align: left;
+    padding-bottom: 0.5rem;
+    color: #666;
+    border-bottom: 1px solid #ddd;
+}
+
+.copies-table td {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.price-col {
+    text-align: right;
+}
+
+.price-cell {
+    text-align: right;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.stock {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.cart-placeholder button {
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.book-description {
+    margin: 2rem 0;
+    border-top: 1px solid #ddd;
+    padding-top: 1.5rem;
+}
+
+.meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    margin-top: 1.5rem;
+}
+
+.meta-table th {
+    text-align: left;
+    width: 30%;
+    padding: 0.5rem 0;
+    color: #666;
+}
+
+.btn-secondary {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    border: 1px solid #333;
+    text-decoration: none;
+    color: #333;
+    border-radius: 4px;
+    margin-top: 1rem;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #333;
+    color: #fff;
+}

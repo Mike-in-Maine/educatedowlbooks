@@ -1,58 +1,55 @@
 {% extends "main/base.html" %}
+{% load static %}
 
 {% block title %}Educated Owl Books{% endblock %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
 {% block content %}
-    <h2>Coming Soon</h2>
-
-    <p>
-        Educated Owl Books is being carefully prepared.
-    </p>
-
-    <p>
-        We specialize in rare, academic, and historical books.
-    </p>
+    <section class="home-hero">
+        <h2>Hello World of Books!!!</h2>
+        <p>Educated Owl Books is being carefully prepared.</p>
+        <p>We specialize in rare, academic, and historical books.</p>
+    </section>
 
     {% if books %}
-        <h3>Sample from the catalog</h3>
+        <div class="catalog-preview">
+            <h3>Sample from the catalog</h3>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
-            {% for book in books %}
-                <div style="text-align: center;">
-                    {% if book.cover_image %}
-                        <a href="{% url 'book_detail' book.isbn10 %}">
-                            <img
-                                src="{{ book.cover_image.url }}"
-                                alt="{{ book.title }}"
-                                style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
-                            >
-                        </a>
+            <div class="book-grid">
+                {% for book in books %}
+                    <div class="book-item">
+                        <div class="book-cover">
+                            {% if book.cover_image %}
+                                <a href="{% url 'book_detail' book.isbn10 %}">
+                                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
+                                </a>
+                            {% else %}
+                                <div class="no-cover">No Image</div>
+                            {% endif %}
+                        </div>
 
-                    {% endif %}
-                    <div style="font-size: 0.9rem; margin-top: .5rem;">
-                        {{ book.title|truncatechars:40 }}
-                        <br>
-                        {{ book.publisher }}
-                        <br>
-                        {{ book.year }}
-                        <br>
-                        {{ book.language }}
-                        <br>
-                        {{ book.pages }} pages
-                        <br>
-                        {{ book.isbn13 }}
-                        <br>
-                        {{ book.author|truncatechars:30 }}
-                        {{ book.isbn10 }}
+                        <div class="book-details">
+                            <span class="book-title">{{ book.title|truncatechars:40 }}</span>
+                            <span class="book-author">by {{ book.author|truncatechars:30 }}</span>
+                            
+                            <div class="book-meta-secondary">
+                                {{ book.publisher }} | {{ book.publication_year|default:"N/A" }}<br>
+                                {{ book.language }} | {{ book.pages|default:"?" }} pages<br>
+                                <small class="text-muted">ISBN-10: {{ book.isbn10 }}</small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
     {% endif %}
 
-    <p style="margin-top: 2rem;">
-        <a href="{% url 'public_listings' %}">
-            Browse books currently for sale
+    <section class="cta-section">
+        <a href="{% url 'public_listings' %}" class="base-link">
+            <strong>Browse books currently for sale &rarr;</strong>
         </a>
-    </p>
+    </section>
 {% endblock %}

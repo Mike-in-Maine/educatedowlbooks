@@ -10,7 +10,7 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_dev')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -164,7 +164,7 @@ class Book(models.Model):
     )
 
     # Social & Stats
-    rating_avg = models.FloatField(default=0.0)
+    rating_avg = models.FloatField(default=2.0)
     want_to_read_count = models.IntegerField(default=0)
     currently_reading_count = models.IntegerField(default=0)
     already_read_count = models.IntegerField(default=0)
@@ -352,111 +352,105 @@ FILE: catalog\management\commands\__init__.py
 FILE: catalog\templates\book_detail.html
 ====================
 {% extends "main/base.html" %}
+{% load static %}
 
 {% block title %}{{ book.title }} | Educated Owl Books{% endblock %}
 
 {% block content %}
-<style>
-    .book-container {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 2.5rem;
-        margin-top: 1rem;
-    }
-
-    .book-cover img {
-        width: 100%;
-        height: auto;
-        border-radius: 4px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .book-meta-stats {
-        display: flex;
-        gap: 1rem;
-        margin: 1.5rem 0;
-        flex-wrap: wrap;
-    }
-
-    .stat-badge {
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        background: #eee;
-    }
-
-    .stat-rating { background: #fff3cd; color: #856404; }
-    .stat-want { background: #d1ecf1; color: #0c5460; }
-    .stat-read { background: #d4edda; color: #155724; }
-
-    .book-description {
-        margin: 2rem 0;
-        border-top: 1px solid #ddd;
-        padding-top: 1.5rem;
-    }
-
-    .meta-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.95rem;
-    }
-
-    .meta-table th {
-        text-align: left;
-        width: 30%;
-        padding: 0.5rem 0;
-        color: #666;
-    }
-
-    .btn-secondary {
-        display: inline-block;
-        padding: 0.6rem 1.2rem;
-        border: 1px solid #333;
-        text-decoration: none;
-        color: #333;
-        border-radius: 4px;
-        margin-top: 1rem;
-        transition: background 0.2s;
-    }
-
-    .btn-secondary:hover { background: #333; color: #fff; }
-
-    @media (max-width: 768px) {
-        .book-container { grid-template-columns: 1fr; }
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/book_detail.css' %}">
 
 <div class="book-container">
+
+    <!-- LEFT: COVER -->
     <div class="book-cover">
         {% if book.cover_image %}
             <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
         {% else %}
-            <div style="background:#eee; height:400px; display:flex; align-items:center; justify-content:center; color:#999;">
-                No Cover Image
-            </div>
+            <div class="no-cover">No Cover Image</div>
         {% endif %}
-        
-        <a href="https://camelcamelcamel.com/product/{{ book.isbn10 }}" target="_blank" class="btn-secondary" style="width:100%; text-align:center; box-sizing:border-box;">
+
+        {% if book.isbn10 %}
+        <a
+            href="https://camelcamelcamel.com/product/{{ book.isbn10 }}"
+            target="_blank"
+            class="btn-secondary full-width"
+        >
             📉 View Price History
         </a>
+        {% endif %}
     </div>
 
+    <!-- RIGHT: INFO -->
     <div class="book-info">
-        <h2 style="font-size: 2.2rem; margin-bottom: 0.5rem;">{{ book.title }}</h2>
-        <p style="font-size: 1.2rem; color: #555;">by <strong>{{ book.author }}</strong></p>
 
+        <h1 class="book-title">{{ book.title }}</h1>
+        <p class="book-author">by <strong>{{ book.author }}</strong></p>
+
+        <!-- Social proof -->
         <div class="book-meta-stats">
             <span class="stat-badge stat-rating">⭐ {{ book.rating_avg|default:"0.0" }}</span>
             <span class="stat-badge stat-want">📖 {{ book.want_to_read_count }} Want to Read</span>
             <span class="stat-badge stat-read">✅ {{ book.already_read_count }} Read</span>
         </div>
 
-        <div class="book-description">
-            <h3 style="font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; color: #888;">Description</h3>
-            <p style="white-space: pre-wrap;">{{ book.description|default:"No description available for this edition." }}</p>
-        </div>
+        <!-- AVAILABLE COPIES -->
+        {% if listings %}
+        <section class="available-copies">
+            <h2 class="section-title">Available Copies</h2>
 
+            <table class="copies-table">
+                <thead>
+                    <tr>
+                        <th>Seller</th>
+                        <th>Format</th>
+                        <th>Condition</th>
+                        <th class="price-col">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for listing in listings %}
+                    <tr>
+                        <td>
+                            <strong>{{ listing.seller.display_name }}</strong><br>
+                            <span class="stock">
+                                {% if listing.quantity > 1 %}
+                                    {{ listing.quantity }} available
+                                {% else %}
+                                    In stock
+                                {% endif %}
+                            </span>
+                        </td>
+
+                        <td>
+                            {% if listing.format %}
+                                {{ listing.get_format_display }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+
+                        <td>{{ listing.get_condition_display }}</td>
+
+                        <td class="price-cell">
+                            ${{ listing.price }}
+                            <div class="cart-placeholder">
+                                <button disabled>Add to cart</button>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+
+        <!-- DESCRIPTION -->
+        <section class="book-description">
+            <h2 class="section-title">Description</h2>
+            <p>{{ book.description|default:"No description available for this edition." }}</p>
+        </section>
+
+        <!-- METADATA -->
         <table class="meta-table">
             <tr><th>ISBN-10</th><td>{{ book.isbn10 }}</td></tr>
             {% if book.amazon_asin %}
@@ -468,13 +462,15 @@ FILE: catalog\templates\book_detail.html
         </table>
 
         {% if book.preview_url %}
-        <div style="margin-top: 2rem;">
-            <a href="{{ book.preview_url }}" target="_blank" class="btn-secondary">📖 Read Preview</a>
-        </div>
+        <a href="{{ book.preview_url }}" target="_blank" class="btn-secondary">
+            📖 Read Preview
+        </a>
         {% endif %}
+
     </div>
 </div>
 {% endblock %}
+
 
 ====================
 FILE: config\asgi.py
@@ -823,7 +819,7 @@ FILE: listings\templates\listings\public_listings.html
 
 <h2>Books for Sale</h2>
 
-<form method="get">
+<form method="get" style="margin-bottom: 1.5rem;">
     <input
         type="text"
         name="q"
@@ -837,8 +833,16 @@ FILE: listings\templates\listings\public_listings.html
 <hr>
 
 {% for listing in listings %}
-    <div style="display: flex; gap: 15px; border-bottom: 1px solid #ddd; padding: 15px 0;">
+    <div style="
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 15px;
+        border-bottom: 1px solid #ddd;
+        padding: 15px 0;
+        align-items: center;
+    ">
 
+        {# Cover #}
         {% if listing.book.cover_image %}
             <a href="{% url 'book_detail' listing.book.isbn10 %}">
                 <img
@@ -847,26 +851,79 @@ FILE: listings\templates\listings\public_listings.html
                     style="width: 80px; height: auto; object-fit: contain;"
                 />
             </a>
-            
         {% else %}
-            <div style="width: 80px; height: 120px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+            <div style="
+                width: 80px;
+                height: 120px;
+                background: #eee;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                color: #777;
+            ">
                 No cover
             </div>
         {% endif %}
 
+        {# Book + listing info #}
         <div>
-            <strong>{{ listing.book.title }}</strong><br>
-            {{ listing.book.author }}<br>
-            Condition: {{ listing.get_condition_display }}<br>
-            <strong>${{ listing.price }}</strong><br>
-            <small>Seller: {{ listing.seller.display_name }}</small>
+            <strong style="font-size: 1.05rem;">
+                <a href="{% url 'book_detail' listing.book.isbn10 %}" style="text-decoration:none; color:inherit;">
+                    {{ listing.book.title }}
+                </a>
+            </strong><br>
+
+            <span style="color:#555;">
+                {{ listing.book.author }}
+            </span><br>
+
+            {% if listing.format %}
+                <span style="font-size: 0.9rem;">
+                    {{ listing.get_format_display }}
+                </span> ·
+            {% endif %}
+
+            <span style="font-size: 0.9rem;">
+                {{ listing.get_condition_display }}
+            </span><br>
+
+            <small style="color:#666;">
+                Sold by {{ listing.seller.display_name }}
+            </small>
+        </div>
+
+        {# Price + action #}
+        <div style="text-align: right;">
+            <div style="font-size: 1.2rem; font-weight: 600;">
+                ${{ listing.price }}
+            </div>
+
+            <div style="font-size: 0.8rem; color:#666;">
+                {% if listing.quantity > 1 %}
+                    {{ listing.quantity }} available
+                {% else %}
+                    In stock
+                {% endif %}
+            </div>
+
+            {# Placeholder for future cart button #}
+            <div style="margin-top: 0.5rem;">
+                <button disabled style="
+                    padding: 4px 10px;
+                    font-size: 0.85rem;
+                    opacity: 0.6;
+                ">
+                    Add to cart
+                </button>
+            </div>
         </div>
 
     </div>
+
 {% empty %}
     <p>No books found.</p>
 {% endfor %}
-
 
 {% endblock %}
 
@@ -943,161 +1000,135 @@ FILE: main\templates\main\base.html
     {% load static %}
     <meta charset="utf-8">
     <title>{% block title %}Educated Owl Books{% endblock %}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <meta name="description" content="Educated Owl Books — rare, academic, and historical books.">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/modern-css-reset/dist/reset.min.css">
-
-    <style>
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            line-height: 1.6;
-            color: #222;
-            background: #fafafa;
-        }
-        header, footer {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 1.5rem;
-        }
-        main {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
-        header h1 {
-            font-size: 1.8rem;
-            margin-bottom: .25rem;
-        }
-        nav a {
-            margin-right: 1rem;
-            text-decoration: none;
-            color: #333;
-        }
-        nav a:hover {
-            text-decoration: underline;
-        }
-        footer {
-            font-size: .9rem;
-            color: #666;
-            border-top: 1px solid #ddd;
-        }
-        .site-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .site-logo {
-            height: 100px;
-            width: auto;
-        }
-
-        .site-title h1 {
-            margin: 0;
-            font-size: 1.8rem;
-        }
-
-    </style>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
 
-<header>
-    <div class="site-header">
-        <img 
-            src="{% static 'images/modern_logo.png' %}" 
-            alt="Educated Owl Books logo"
-            class="site-logo"
-        >
-        <div class="site-title">
-            <h1>Educated Owl Books</h1>
+<div class="page-wrapper">
+    <header>
+        <div class="base-header-outer">
+            <div class="container base-nav-primary">
+                <a href="/" class="base-logo-link" style="text-decoration:none; color:inherit;">
+                    <img src="{% static 'images/modern_logo.png' %}" alt="Logo" style="height:45px;">
+                    <div class="base-site-title"><h1>Educated Owl Books</h1></div>
+                </a>
+                
+                <div class="base-search-bar">
+                    <form action="/search/" method="get">
+                        <input type="text" name="q" placeholder="Search by title, author, or ISBN...">
+                        <button type="submit">SEARCH</button>
+                    </form>
+                </div>
+
+                <div class="base-user-menu">
+                    <select class="base-lang-select"><option>EN</option></select>
+                    <a href="/login/" class="base-link">Sign In</a>
+                    <a href="/cart/" class="base-link"><i class="fa-solid fa-cart-shopping"></i> (0)</a>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <nav>
-        <a href="/">Home</a>
-        <a href="/books/">Books</a>
-        <a href="/about/">About</a>
-        <a href="/contact/">Contact</a>
-    </nav>
-</header>
+        <div class="base-header-outer">
+            <div class="container">
+                <nav class="base-nav-row-bold">
+                    <a href="/search/advanced/" class="base-link">Advanced Search</a>
+                    <a href="/textbooks/" class="base-link">Textbooks</a>
+                    <a href="/rare-books/" class="base-link">Rare & Collectible</a>
+                    <a href="/sellers/" class="base-link">Our Sellers</a>
+                </nav>
+            </div>
+        </div>
 
+        <div class="base-header-outer" style="border-bottom: none;">
+            <div class="container">
+                <nav class="base-nav-row-slim">
+                    <a href="/categories/" class="base-link">Categories</a>
+                    <a href="/trending/" class="base-link">New & Trending</a>
+                    <a href="/deals/" class="base-link">Sales & Deals</a>
+                    <a href="/best-sellers/" class="base-link">Best Sellers</a>
+                </nav>
+            </div>
+        </div>
 
-<main>
-    {% block content %}{% endblock %}
-</main>
+        <div class="base-ad-wrapper">
+            <div class="container">
+                <div class="base-ad-content">ADVERTISEMENT BANNER SPACE</div>
+            </div>
+        </div>
+    </header>
 
-<footer>
-    © {% now "Y" %} Educated Owl Books - 
-</footer>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
 
+    <footer class="container base-footer">
+        © {% now "Y" %} Educated Owl Books
+    </footer>
+</div> 
 </body>
 </html>
-
 
 ====================
 FILE: main\templates\main\home.html
 ====================
 {% extends "main/base.html" %}
+{% load static %}
 
 {% block title %}Educated Owl Books{% endblock %}
 
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+{% endblock %}
+
 {% block content %}
-    <h2>Coming Soon</h2>
-
-    <p>
-        Educated Owl Books is being carefully prepared.
-    </p>
-
-    <p>
-        We specialize in rare, academic, and historical books.
-    </p>
+    <section class="home-hero">
+        <h2>Coming Soon</h2>
+        <p>Educated Owl Books is being carefully prepared.</p>
+        <p>We specialize in rare, academic, and historical books.</p>
+    </section>
 
     {% if books %}
-        <h3>Sample from the catalog</h3>
+        <div class="catalog-preview">
+            <h3>Sample from the catalog</h3>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">
-            {% for book in books %}
-                <div style="text-align: center;">
-                    {% if book.cover_image %}
-                        <a href="{% url 'book_detail' book.isbn10 %}">
-                            <img
-                                src="{{ book.cover_image.url }}"
-                                alt="{{ book.title }}"
-                                style="max-width: 120px; height: auto; box-shadow: 0 2px 6px rgba(0,0,0,.15);"
-                            >
-                        </a>
+            <div class="book-grid">
+                {% for book in books %}
+                    <div class="book-item">
+                        <div class="book-cover">
+                            {% if book.cover_image %}
+                                <a href="{% url 'book_detail' book.isbn10 %}">
+                                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
+                                </a>
+                            {% else %}
+                                <div class="no-cover">No Image</div>
+                            {% endif %}
+                        </div>
 
-                    {% endif %}
-                    <div style="font-size: 0.9rem; margin-top: .5rem;">
-                        {{ book.title|truncatechars:40 }}
-                        <br>
-                        {{ book.publisher }}
-                        <br>
-                        {{ book.year }}
-                        <br>
-                        {{ book.language }}
-                        <br>
-                        {{ book.pages }} pages
-                        <br>
-                        {{ book.isbn13 }}
-                        <br>
-                        {{ book.author|truncatechars:30 }}
-                        {{ book.isbn10 }}
+                        <div class="book-details">
+                            <span class="book-title">{{ book.title|truncatechars:40 }}</span>
+                            <span class="book-author">by {{ book.author|truncatechars:30 }}</span>
+                            
+                            <div class="book-meta-secondary">
+                                {{ book.publisher }} | {{ book.publication_year|default:"N/A" }}<br>
+                                {{ book.language }} | {{ book.pages|default:"?" }} pages<br>
+                                <small class="text-muted">ISBN-10: {{ book.isbn10 }}</small>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
     {% endif %}
 
-    <p style="margin-top: 2rem;">
-        <a href="{% url 'public_listings' %}">
-            Browse books currently for sale
+    <section class="cta-section">
+        <a href="{% url 'public_listings' %}" class="base-link">
+            <strong>Browse books currently for sale &rarr;</strong>
         </a>
-    </p>
+    </section>
 {% endblock %}
-
 
 ====================
 FILE: orders\admin.py

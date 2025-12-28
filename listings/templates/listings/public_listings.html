@@ -6,7 +6,7 @@
 
 <h2>Books for Sale</h2>
 
-<form method="get">
+<form method="get" style="margin-bottom: 1.5rem;">
     <input
         type="text"
         name="q"
@@ -20,8 +20,16 @@
 <hr>
 
 {% for listing in listings %}
-    <div style="display: flex; gap: 15px; border-bottom: 1px solid #ddd; padding: 15px 0;">
+    <div style="
+        display: grid;
+        grid-template-columns: 80px 1fr auto;
+        gap: 15px;
+        border-bottom: 1px solid #ddd;
+        padding: 15px 0;
+        align-items: center;
+    ">
 
+        {# Cover #}
         {% if listing.book.cover_image %}
             <a href="{% url 'book_detail' listing.book.isbn10 %}">
                 <img
@@ -30,25 +38,78 @@
                     style="width: 80px; height: auto; object-fit: contain;"
                 />
             </a>
-            
         {% else %}
-            <div style="width: 80px; height: 120px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+            <div style="
+                width: 80px;
+                height: 120px;
+                background: #eee;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                color: #777;
+            ">
                 No cover
             </div>
         {% endif %}
 
+        {# Book + listing info #}
         <div>
-            <strong>{{ listing.book.title }}</strong><br>
-            {{ listing.book.author }}<br>
-            Condition: {{ listing.get_condition_display }}<br>
-            <strong>${{ listing.price }}</strong><br>
-            <small>Seller: {{ listing.seller.display_name }}</small>
+            <strong style="font-size: 1.05rem;">
+                <a href="{% url 'book_detail' listing.book.isbn10 %}" style="text-decoration:none; color:inherit;">
+                    {{ listing.book.title }}
+                </a>
+            </strong><br>
+
+            <span style="color:#555;">
+                {{ listing.book.author }}
+            </span><br>
+
+            {% if listing.format %}
+                <span style="font-size: 0.9rem;">
+                    {{ listing.get_format_display }}
+                </span> ·
+            {% endif %}
+
+            <span style="font-size: 0.9rem;">
+                {{ listing.get_condition_display }}
+            </span><br>
+
+            <small style="color:#666;">
+                Sold by {{ listing.seller.display_name }}
+            </small>
+        </div>
+
+        {# Price + action #}
+        <div style="text-align: right;">
+            <div style="font-size: 1.2rem; font-weight: 600;">
+                ${{ listing.price }}
+            </div>
+
+            <div style="font-size: 0.8rem; color:#666;">
+                {% if listing.quantity > 1 %}
+                    {{ listing.quantity }} available
+                {% else %}
+                    In stock
+                {% endif %}
+            </div>
+
+            {# Placeholder for future cart button #}
+            <div style="margin-top: 0.5rem;">
+                <button disabled style="
+                    padding: 4px 10px;
+                    font-size: 0.85rem;
+                    opacity: 0.6;
+                ">
+                    Add to cart
+                </button>
+            </div>
         </div>
 
     </div>
+
 {% empty %}
     <p>No books found.</p>
 {% endfor %}
-
 
 {% endblock %}
