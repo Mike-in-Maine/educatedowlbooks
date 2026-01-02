@@ -31,7 +31,7 @@
 
         {# Cover #}
         {% if listing.book.cover_image %}
-            <a href="{% url 'book_detail' listing.book.isbn10 %}">
+            <a href="{% url 'book_detail' listing.book.isbn13 %}">
                 <img
                     src="{{ listing.book.cover_image.url }}"
                     alt="{{ listing.book.title }}"

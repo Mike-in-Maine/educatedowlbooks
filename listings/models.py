@@ -12,6 +12,12 @@ class Listing(models.Model):
         ("acceptable", "Acceptable"),
     ]
 
+    FORMAT_CHOICES = [
+    ("paperback", "Paperback"),
+    ("hardcover", "Hardcover"),
+    ("mass_market", "Mass Market Paperback"),
+    ]
+
     seller = models.ForeignKey(
         Seller,
         on_delete=models.CASCADE,
@@ -31,10 +37,9 @@ class Listing(models.Model):
 
     format = models.CharField(
         max_length=32,
+        choices=FORMAT_CHOICES,
         blank=True,
-        help_text="Paperback, Hardcover, etc."
     )
-
 
     condition = models.CharField(
         max_length=20,
