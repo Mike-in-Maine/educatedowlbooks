@@ -189,15 +189,3 @@ Resume — no data loss possible
 13. One-line Health Check
 SELECT COUNT(*), MAX(last_enriched) FROM book_metadata;
 
-
----
-
-## ✅ Next Steps (Optional)
-
-If you want, next I can:
-- Add a `README.md` that ties both together
-- Generate a **Makefile** (`make enrich`, `make status`)
-- Convert this into **Ansible-style runbooks**
-- Create a **data-lifecycle diagram**
-
-Just say what you want to add to the repo.
