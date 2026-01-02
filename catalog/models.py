@@ -1,6 +1,10 @@
 import os
 from django.db import models
 
+# NOTE:
+# Cover storage paths intentionally prefer ISBN-10 when available.
+# This mirrors the primary enrichment identifier choice.
+
 def get_catalog_upload_path(instance, filename):
     """
     Generates a partitioned path for book covers.
@@ -10,17 +14,56 @@ def get_catalog_upload_path(instance, filename):
     return os.path.join('catalog', 'covers', *isbn[:3], filename)
 
 class Book(models.Model):
-    # Identifiers
+    # ============================================================
+    # IDENTIFIERS — READ THIS BEFORE CHANGING
+    # ============================================================
+    #
+    # ⚠️ DESIGN DECISION (INTENTIONAL):
+    #
+    # ISBN-10 is treated as the PRIMARY enrichment identifier
+    # when available.
+    #
+    # Rationale:
+    # - Used / legacy book markets still heavily rely on ISBN-10
+    # - Many seller feeds and historical datasets provide ISBN-10 only
+    # - Amazon ASIN mappings and older catalog data align more reliably
+    #   with ISBN-10 than ISBN-13
+    #
+    # ISBN-13 is fully supported and stored, but ISBN-10 remains the
+    # enrichment anchor by design.
+    #
+    # DO NOT casually refactor this to “ISBN-13 only” without reviewing:
+    # - ingestion pipelines
+    # - seller feeds
+    # - listings URLs
+    # - search indexing
+    #
+    # See also: catalog/management/commands/import_books.py
+    # ============================================================
+
     isbn10 = models.CharField(
-        max_length=10, unique=True, null=True, blank=True, db_index=True,
-        help_text="Primary identifier when available",
+        max_length=10,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Primary enrichment identifier when available (by design)",
     )
+
     isbn13 = models.CharField(
-        max_length=13, unique=True, null=True, blank=True, db_index=True,
+        max_length=13,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Secondary identifier; always stored when available",
     )
+
     amazon_asin = models.CharField(
         max_length=20, blank=True, null=True, help_text="Amazon Standard Identification Number"
     )
+
+    last_enriched = models.DateTimeField(null=True, blank=True)
 
     # Core Metadata
     title = models.CharField(max_length=512)
@@ -37,7 +80,7 @@ class Book(models.Model):
     )
 
     # Social & Stats
-    rating_avg = models.FloatField(default=2.0)
+    rating_avg = models.FloatField(null=True, blank=True)
     want_to_read_count = models.IntegerField(default=0)
     currently_reading_count = models.IntegerField(default=0)
     already_read_count = models.IntegerField(default=0)

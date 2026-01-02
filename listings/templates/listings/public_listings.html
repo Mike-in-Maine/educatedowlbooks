@@ -56,7 +56,7 @@
         {# Book + listing info #}
         <div>
             <strong style="font-size: 1.05rem;">
-                <a href="{% url 'book_detail' listing.book.isbn10 %}" style="text-decoration:none; color:inherit;">
+                <a href="{% url 'book_detail' listing.book.isbn13 %}" style="text-decoration:none; color:inherit;">
                     {{ listing.book.title }}
                 </a>
             </strong><br>

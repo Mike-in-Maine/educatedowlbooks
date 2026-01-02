@@ -23,7 +23,7 @@
                     <div class="book-item">
                         <div class="book-cover">
                             {% if book.cover_image %}
-                                <a href="{% url 'book_detail' book.isbn10 %}">
+                                <a href="{% url 'book_detail' book.isbn13 %}">
                                     <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
                                 </a>
                             {% else %}
