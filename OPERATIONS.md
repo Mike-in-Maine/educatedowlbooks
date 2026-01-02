@@ -1,165 +1,203 @@
-# Educated Owl Books — Architecture Overview
+# Educated Owl Books — Operations & Runbook
 
-## 1. Purpose
+## 1. PostgreSQL Access
 
-Educated Owl Books (EOB) is a multi-seller book marketplace.
+### Enter catalog DB
+```bash
+sudo -u postgres psql eob_catalog
 
-Core design goals:
-- Ingest *everything*
-- Surface *only sellable books*
-- Separate **data ingestion** from **commercial viability**
-- Allow slow, resumable enrichment over months
 
----
+Exit:
 
-## 2. High-level Architecture
+\q
 
-Data flow:
 
-Open Library Dumps
-→ ISBN Canonicalization
-→ PostgreSQL ISBN Spine
-→ Slow API Enrichment (cron)
-→ book_metadata
-→ Seller listings & scoring
-→ Frontend search & listings
+List databases:
 
----
+\l
 
-## 3. Data Sources
+2. Core Tables
 
-### Open Library
-- **Bulk dumps** (editions)
-- **Public API** (enrichment)
-- Treated as authoritative bibliographic source
+book_isbn13_clean — canonical ISBN spine
 
-Contains:
-- Commercial books
-- Government documents
-- Pamphlets
-- Maps
-- Internal publications
+book_metadata — enriched bibliographic data
 
-➡️ All are ingested, none are deleted automatically.
+3. Enrichment Script
 
----
+Location:
 
-## 4. Canonical ISBN Strategy
+/data/openlibrary/scripts/enrich_openlibrary.py
 
-### Canonical key: ISBN-13
 
-Rules:
-- Must be numeric
-- Length = 13
-- Must start with `978` or `979`
-- Must pass ISBN-13 checksum
+Python environment:
 
-Pseudo-ISBNs:
-- Many institutional publishers use technically valid but non-commercial ISBNs
-- These are **kept**, not filtered at ingestion time
+/var/www/educatedowlbooks.com/venv/bin/python3
 
-Reason:
-> Commercial filtering is a *business concern*, not a data concern.
 
----
+Key config:
 
-## 5. Core Tables
+BATCH_SIZE = 1000
+SLEEP_SECONDS = 3
+LOG_FILE = "/data/openlibrary/logs/enrich.log"
 
-### `book_isbn13_clean`
-Canonical ISBN spine:
-- isbn13 (canonical)
-- isbn10 (may be malformed)
-- edition_key (OL)
-- work_key (OL)
+4. Cron Job (Single-Instance Safe)
+
+Crontab entry:
+
+0 * * * * flock -n /tmp/eob_enrich.lock \
+/var/www/educatedowlbooks.com/venv/bin/python3 \
+/data/openlibrary/scripts/enrich_openlibrary.py \
+>> /data/openlibrary/logs/cron.log 2>&1
+
 
 Purpose:
-- Stable universe of books
-- Never rewritten
-- Never enriched directly
+
+Runs once per hour
+
+Prevents overlap via flock
+
+Safe if server restarts
+
+5. Lock Handling
+
+Check lock:
+
+ls /tmp/eob_enrich.lock
+
+
+Remove stale lock:
+
+rm /tmp/eob_enrich.lock
+
+6. Logs & Monitoring
+
+Cron output:
+
+tail -f /data/openlibrary/logs/cron.log
+
+
+Check if script is running:
+
+ps -o pid,lstart,cmd -C python3 | grep enrich_openlibrary
+
+
+System monitoring:
+
+htop
+top
+
+7. Ingestion Progress Queries (Common)
+
+Total enriched:
+
+SELECT COUNT(*) FROM book_metadata;
+
+
+Remaining to enrich:
+
+SELECT
+  COUNT(*) AS total_isbns,
+  COUNT(m.isbn13) AS enriched_isbns,
+  COUNT(*) - COUNT(m.isbn13) AS remaining
+FROM book_isbn13_clean s
+LEFT JOIN book_metadata m USING (isbn13);
+
+
+Latest enrichment timestamp:
+
+SELECT
+  COUNT(*) AS total,
+  MAX(last_enriched) AS latest
+FROM book_metadata;
+
+
+Inspect recent rows:
+
+SELECT *
+FROM book_metadata
+ORDER BY last_enriched DESC
+LIMIT 10;
+
+8. ISBN Validation Logic (Reference)
+def is_valid_isbn13(isbn):
+    if not isbn.isdigit() or len(isbn) != 13:
+        return False
+    if not (isbn.startswith("978") or isbn.startswith("979")):
+        return False
+
+    total = 0
+    for i, d in enumerate(isbn[:12]):
+        total += int(d) if i % 2 == 0 else int(d) * 3
+
+    check = (10 - (total % 10)) % 10
+    return check == int(isbn[-1])
+
+9. Django / Web Ops
+
+Local dev (Windows):
+
+.\venv\Scripts\activate
+python manage.py runserver
+
+
+Production restart:
+
+systemctl restart gunicorn
+systemctl restart nginx
+
+
+List gunicorn services:
+
+systemctl list-units | grep gunicorn
+
+10. Operational Philosophy
+
+Never delete data automatically
+
+Never overwrite enriched records
+
+Cron jobs must be restart-safe
+
+Slow ingestion is intentional
+
+Logs > dashboards initially
+
+11. Future Ops (Planned)
+
+Commercial score computation job
+
+Seller-driven visibility overrides
+
+Optional external availability checks
+
+Optional metrics export (Grafana later)
+
+12. Emergency Checklist
+
+If enrichment stops:
+
+Check cron log
+
+Check lock file
+
+Verify venv Python path
+
+Test script manually
+
+Resume — no data loss possible
+
+13. One-line Health Check
+SELECT COUNT(*), MAX(last_enriched) FROM book_metadata;
+
 
 ---
 
-### `book_metadata`
-Enriched bibliographic data:
-- isbn13 (PK)
-- title
-- author
-- publisher
-- publish_year
-- cover_url
-- source
-- last_enriched
+## ✅ Next Steps (Optional)
 
-Purpose:
-- Incremental enrichment
-- Safe restarts
-- Partial population allowed
+If you want, next I can:
+- Add a `README.md` that ties both together
+- Generate a **Makefile** (`make enrich`, `make status`)
+- Convert this into **Ansible-style runbooks**
+- Create a **data-lifecycle diagram**
 
----
-
-## 6. Enrichment Philosophy
-
-- Slow by design
-- Resume-safe
-- Never overwrite existing rows
-- API-polite
-- Cron-driven
-
-Throughput target:
-- ~20–25k books/day
-- Full corpus over time, not immediately
-
----
-
-## 7. Commercial Viability (Future Layer)
-
-Books are **not deleted** if unsellable.
-
-Instead:
-- Every book will receive a **commercial score**
-- Only books above threshold appear in search
-
-Example scoring factors:
-- + Amazon presence
-- + AbeBooks presence
-- + Multiple sellers
-- + Cover image
-- − Institutional publisher
-- − Pamphlet-like metadata
-
-Seller listings always override score:
-> If a seller lists it, it is sellable.
-
----
-
-## 8. Separation of Concerns
-
-| Layer | Responsibility |
-|-----|---------------|
-| Ingestion | Collect everything |
-| Canonicalization | Normalize identifiers |
-| Enrichment | Bibliographic truth |
-| Scoring | Commercial relevance |
-| Listings | Actual sellability |
-| UI | Visibility & search |
-
-This separation allows:
-- Long-running ingestion
-- Independent UI development
-- Later optimization without data loss
-
----
-
-## 9. Current State
-
-- ~29M ISBNs ingested
-- ~25k+ enriched and growing
-- Cron enrichment running hourly
-- UI not yet consuming metadata directly
-
----
-
-## 10. Guiding Principle
-
-> **Data is cheap. Curation is expensive.  
-> Ingest first. Decide later.**
+Just say what you want to add to the repo.
