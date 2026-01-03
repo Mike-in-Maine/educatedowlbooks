@@ -1064,6 +1064,12 @@ class Listing(models.Model):
         ("acceptable", "Acceptable"),
     ]
 
+    FORMAT_CHOICES = [
+    ("paperback", "Paperback"),
+    ("hardcover", "Hardcover"),
+    ("mass_market", "Mass Market Paperback"),
+    ]
+
     seller = models.ForeignKey(
         Seller,
         on_delete=models.CASCADE,
@@ -1083,10 +1089,9 @@ class Listing(models.Model):
 
     format = models.CharField(
         max_length=32,
+        choices=FORMAT_CHOICES,
         blank=True,
-        help_text="Paperback, Hardcover, etc."
     )
-
 
     condition = models.CharField(
         max_length=20,
@@ -1203,7 +1208,7 @@ FILE: listings\templates\listings\public_listings.html
 
         {# Cover #}
         {% if listing.book.cover_image %}
-            <a href="{% url 'book_detail' listing.book.isbn10 %}">
+            <a href="{% url 'book_detail' listing.book.isbn13 %}">
                 <img
                     src="{{ listing.book.cover_image.url }}"
                     alt="{{ listing.book.title }}"
@@ -1340,7 +1345,12 @@ from django.shortcuts import render
 from catalog.models import Book
 
 def home(request):
-    books = Book.objects.exclude(cover_image="")[:12]  # first 12 with covers
+    books = (
+        Book.objects
+        .exclude(cover_image="")
+        .exclude(last_enriched__isnull=True)
+        .order_by("-last_enriched")[:12]
+    )
     return render(request, "main/home.html", {"books": books}) 
 
 

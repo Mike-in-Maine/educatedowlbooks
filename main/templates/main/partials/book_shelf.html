@@ -1,0 +1,29 @@
+{% if books %}
+<div class="home-shelf">
+    <h3>{{ title }}</h3>
+
+    <div class="book-grid">
+        {% for book in books %}
+            <div class="book-item">
+
+                <div class="book-cover">
+                    <a href="{% url 'book_detail' book.isbn13 %}">
+                        <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
+                    </a>
+                </div>
+
+                <div class="book-details">
+                    <span class="book-title">
+                        {{ book.title|truncatechars:40 }}
+                    </span>
+                    <span class="book-author">
+                        {{ book.author|truncatechars:30 }}
+                    </span>
+                </div>
+
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endif %}

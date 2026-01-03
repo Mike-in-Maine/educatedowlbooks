@@ -12,8 +12,10 @@ cd /var/www/educatedowlbooks.com
 
 # 2. Get the latest code from GitHub
 echo "📥 Pulling latest code..."
-git fetch --all
-git reset --hard origin/main
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+# git reset --hard origin/main
 
 # 3. Activate Virtual Environment
 echo "🐍 Activating environment..."
