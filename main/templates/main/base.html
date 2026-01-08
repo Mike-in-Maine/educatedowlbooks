@@ -4,9 +4,17 @@
     {% load static %}
     <meta charset="utf-8">
     <title>{% block title %}Educated Owl Books{% endblock %}</title>
-
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Favicon -->   
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -37,8 +45,17 @@
                 <div class="base-user-menu">
                     <select class="base-lang-select">
                         <option>EN</option>
+                        <option>ES</option>
+                        <option>FR</option>
+                        <option>DE</option>
+                        <option>IT</option>
+                        <option>JA</option>
+                        <option>KO</option>
+                        <option>PT</option>
+                        <option>RU</option>
                     </select>
                     <a href="/login/" class="base-link">Sign In</a>
+                    <a href="/login/" class="base-link">Register</a>
                     <a href="/cart/" class="base-link">
                         <i class="fa-solid fa-cart-shopping"></i> (0)
                     </a>

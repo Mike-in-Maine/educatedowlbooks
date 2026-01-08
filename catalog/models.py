@@ -13,7 +13,21 @@ def get_catalog_upload_path(instance, filename):
     isbn = instance.isbn10 or instance.isbn13 or "unknown"
     return os.path.join('catalog', 'covers', *isbn[:3], filename)
 
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Book(models.Model):
+
     # ============================================================
     # IDENTIFIERS — READ THIS BEFORE CHANGING
     # ============================================================
@@ -58,7 +72,11 @@ class Book(models.Model):
         db_index=True,
         help_text="Secondary identifier; always stored when available",
     )
-
+    categories = models.ManyToManyField(
+        Category,
+        related_name="books",
+        blank=True,
+    )
     amazon_asin = models.CharField(
         max_length=20, blank=True, null=True, help_text="Amazon Standard Identification Number"
     )

@@ -9,11 +9,6 @@
 
 {% block content %}
 
-<section class="home-hero">
-    <h2>Educated Owl Books</h2>
-    <p>Rare, academic, and historical works — thoughtfully curated.</p>
-</section>
-
 {% include "main/partials/book_shelf.html" with title="Newly Enriched" books=recently_enriched %}
 {% include "main/partials/book_shelf.html" with title="Highly Rated by Readers" books=highly_rated %}
 {% include "main/partials/book_shelf.html" with title="Timeless Classics" books=classics %}

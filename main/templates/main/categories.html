@@ -1,0 +1,41 @@
+{% extends "main/base.html" %}
+{% load static %}
+
+{% block title %}Browse Categories | Educated Owl Books{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/categories.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="categories-page">
+
+    <h1>Browse by Category</h1>
+    <p class="categories-intro">
+        Explore books across history, literature, science, and the arts.
+    </p>
+
+    <h2>Fiction & Literature</h2>
+    <div class="category-grid">
+        {% for name in categories|slice:":7" %}
+            <div class="category-card"><h3>{{ name }}</h3></div>
+        {% endfor %}
+    </div>
+
+    <h2>Nonfiction & Knowledge</h2>
+    <div class="category-grid">
+        {% for name in categories|slice:"7:15" %}
+            <div class="category-card"><h3>{{ name }}</h3></div>
+        {% endfor %}
+    </div>
+
+    <h2>Arts, Culture & Lifestyle</h2>
+    <div class="category-grid">
+        {% for name in categories|slice:"15:" %}
+            <div class="category-card"><h3>{{ name }}</h3></div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}
