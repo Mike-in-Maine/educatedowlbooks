@@ -1,0 +1,56 @@
+
+
+.book-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 40px;
+    margin-top: 15px;
+}
+
+.primary-offer {
+    border: 1px solid #ddd;
+    padding: 15px 15px 15px 15px;
+    background: #fafafa;
+}
+
+.primary-price-title {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 3px;
+    font-weight: 500;
+}
+.primary-price {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 4px 0;
+}
+.seller-country {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+
+.other-offers {
+    margin-top: 50px;
+}
+
+.copies-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.copies-table th,
+.copies-table td {
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.price-col {
+    text-align: right;
+}
+.seller-policy-note {
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 10px;
+}

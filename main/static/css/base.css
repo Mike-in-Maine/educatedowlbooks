@@ -1,6 +1,6 @@
-/* =========================
-   Base Reset / Baseline
-   ========================= */
+/* =========================================================
+   RESET & BASE TYPOGRAPHY
+   ========================================================= */
 
 *,
 *::before,
@@ -8,7 +8,8 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     margin: 0;
     padding: 0;
 }
@@ -22,24 +23,24 @@ body {
     background-color: #ffffff;
 }
 
-/* =========================
-   Layout Containers
-   ========================= */
+/* =========================================================
+   GLOBAL LAYOUT
+   ========================================================= */
 
 .page-wrapper {
     max-width: 1900px;
     margin: 20px auto;
     background: #fff;
-    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
 }
 
 .container {
     padding: 0 20px;
 }
 
-/* =========================
-   Header Structure
-   ========================= */
+/* =========================================================
+   HEADER SHELL
+   ========================================================= */
 
 .base-header-outer {
     width: 100%;
@@ -47,11 +48,15 @@ body {
     border-bottom: 1px solid #e5e5e5;
 }
 
+/* =========================================================
+   TOP HEADER (LOGO / SEARCH / USER)
+   ========================================================= */
+
 .base-nav-primary {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 15px 0;
+    gap: 16px;
+    padding: 14px 0;
 }
 
 /* Logo */
@@ -64,18 +69,18 @@ body {
 }
 
 .base-site-title h1 {
-    font-size: 1.4rem;
-    font-weight: 700;
     margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
 }
 
-/* =========================
-   Search Bar
-   ========================= */
+/* =========================================================
+   SEARCH BAR
+   ========================================================= */
 
 .base-search-bar {
     flex: 1;
-    max-width: 600px;
+    max-width: 620px;
 }
 
 .base-search-bar form {
@@ -85,18 +90,19 @@ body {
 
 .base-search-bar input {
     flex: 1;
-    padding: 10px;
+    padding: 10px 12px;
     border: 1px solid #ccc;
     border-right: none;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
 }
 
 .base-search-bar button {
-    padding: 10px 16px;
+    padding: 10px 18px;
     border: 1px solid #531313;
     background: #531313;
     color: #fff;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
     cursor: pointer;
 }
 
@@ -104,59 +110,100 @@ body {
     background: #000;
 }
 
-/* =========================
-   User Menu
-   ========================= */
+/* =========================================================
+   USER MENU
+   ========================================================= */
 
 .base-user-menu {
     display: flex;
     align-items: center;
-    gap: 15px;
-    
+    gap: 16px;
 }
 
 .base-lang-select {
     padding: 6px;
+    font-size: 0.75rem;
 }
 
-/* =========================
-   Navigation Rows
-   ========================= */
+/* =========================================================
+   NAV LINKS (SHARED)
+   ========================================================= */
 
-.base-nav-row-bold,
-.base-nav-row-slim {
-    font-family: 'Lexend';
-    font-weight: 600;
-    display: flex;
-    gap: 20px;
-    padding: 5px 0;
-    padding-left: 10px;
+.base-link {
+    text-decoration: none;
+    color: #333;
+    font-size: 0.85rem;
+    font-weight: 400;
 }
+
+.base-link:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   PRIMARY NAV (DARK STRIP)
+   ========================================================= */
 
 .base-nav-row-bold {
-    width: 100%;
-    font-weight: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
     background-color: #531313;
+}
+
+.base-nav-row-bold .base-nav-left {
+    display: flex;
+    gap: 22px;
 }
 
 .base-nav-row-bold .base-link {
     color: #ffffff;
     font-weight: 300;
 }
-.base-link {
-    text-decoration: none;
-    color: #333;
-    font-weight: 400;
-    font-size: 0.9rem;
+
+/* Seller CTA (right side, subtle) */
+.base-sell-link {
+    font-size: 0.85rem;
+    font-style: italic;
+    color: #ffffff;
+    text-decoration: underline;
+    letter-spacing: 0.03em;
 }
 
-.base-nav-row-bold .base-link:hover {
+.base-sell-link:hover {
+    opacity: 1;
     text-decoration: underline;
 }
 
-/* =========================
-   Ad Banner
-   ========================= */
+/* =========================================================
+   SECONDARY NAV (LIGHT STRIP)
+   ========================================================= */
+
+.base-nav-row-slim {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    gap: 20px;
+}
+
+.base-nav-row-slim .base-nav-left {
+    display: flex;
+    gap: 18px;
+}
+
+/* Marketplace trust note */
+.base-marketplace-note {
+    font-size: 0.75rem;
+    color: #777;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* =========================================================
+   AD BANNER
+   ========================================================= */
 
 .base-ad-wrapper {
     background: #ffeded;
@@ -166,49 +213,45 @@ body {
 
 .base-ad-content {
     padding: 10px 0;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #777;
     text-align: center;
 }
 
-/* =========================
-   Main Content
-   ========================= */
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
 
 main {
     padding: 30px 0;
     min-height: 60vh;
 }
 
-/* =========================
-   Footer
-   ========================= */
+/* =========================================================
+   FOOTER
+   ========================================================= */
 
 footer {
     padding: 20px 0;
     border-top: 1px solid #ddd;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #666;
     text-align: center;
 }
-/* =========================
-   Mobile Layout
-   ========================= */
+
+/* =========================================================
+   MOBILE / RESPONSIVE
+   ========================================================= */
 
 .mobile-menu-toggle {
     display: none;
     background: none;
     border: none;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     cursor: pointer;
 }
 
-/* Tablet and below */
 @media (max-width: 900px) {
-
-    .base-nav-primary {
-        gap: 15px;
-    }
 
     .base-search-bar {
         display: none;
@@ -229,5 +272,9 @@ footer {
     .base-nav-row-bold.active,
     .base-nav-row-slim.active {
         display: flex;
+    }
+
+    .base-marketplace-note {
+        display: none;
     }
 }

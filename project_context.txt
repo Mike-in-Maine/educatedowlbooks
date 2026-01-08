@@ -267,7 +267,7 @@ from django.urls import path
 from .views import book_detail
 
 urlpatterns = [
-    path("<str:isbn13>/", book_detail, name="book_detail"),
+    path("<str:identifier>/", book_detail, name="book_detail"),
 ]
 
 ====================
@@ -275,17 +275,32 @@ FILE: catalog\views.py
 ====================
 # catalog/views.py
 from django.shortcuts import get_object_or_404, render
+from django.db.models import Q
 from .models import Book
 
-def book_detail(request, isbn13):
-    book = get_object_or_404(Book, isbn13=isbn13)
-    listings = book.listings.select_related("seller").order_by("price")
+def book_detail(request, identifier):
+    book = get_object_or_404(
+        Book,
+        Q(isbn10=identifier) | Q(isbn13=identifier)
+    )
+
+    listings_qs = (
+        book.listings
+        .select_related("seller")
+        .filter(quantity__gt=0)
+        .order_by("price")
+    )
+
+    primary_listing = listings_qs.first()
+    other_listings = listings_qs[1:]
+
     return render(
         request,
         "book_detail.html",
         {
             "book": book,
-            "listings": listings,
+            "primary_listing": primary_listing,
+            "other_listings": other_listings,
         }
     )
 
@@ -768,114 +783,120 @@ FILE: catalog\templates\book_detail.html
 
 <div class="book-container">
 
-    <!-- LEFT: COVER -->
-    <div class="book-cover">
-        {% if book.cover_image %}
-            <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
-        {% else %}
-            <div class="no-cover">No Cover Image</div>
-        {% endif %}
-
-        {% if book.isbn10 %}
-        <a
-            href="https://camelcamelcamel.com/product/{{ book.isbn10 }}"
-            target="_blank"
-            class="btn-secondary full-width"
-        >
-            📉 View Price History
-        </a>
-        {% endif %}
-    </div>
-
-    <!-- RIGHT: INFO -->
+    <!-- LEFT COLUMN: BOOK INFO -->
     <div class="book-info">
 
         <h1 class="book-title">{{ book.title }}</h1>
         <p class="book-author">by <strong>{{ book.author }}</strong></p>
 
-        <!-- Social proof -->
         <div class="book-meta-stats">
-            <span class="stat-badge stat-rating">⭐ {{ book.rating_avg|default:"—" }}</span>
-            <span class="stat-badge stat-want">📖 {{ book.want_to_read_count }} Want to Read</span>
-            <span class="stat-badge stat-read">✅ {{ book.already_read_count }} Read</span>
+            <span class="stat-badge">⭐ {{ book.rating_avg|default:"—" }}</span>
+            <span class="stat-badge">📖 {{ book.want_to_read_count }} Want to Read</span>
+            <span class="stat-badge">✅ {{ book.already_read_count }} Read</span>
         </div>
 
-        <!-- AVAILABLE COPIES -->
-        {% if listings %}
-        <section class="available-copies">
-            <h2 class="section-title">Available Copies</h2>
-
-            <table class="copies-table">
-                <thead>
-                    <tr>
-                        <th>Seller</th>
-                        <th>Format</th>
-                        <th>Condition</th>
-                        <th class="price-col">Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for listing in listings %}
-                    <tr>
-                        <td>
-                            <strong>{{ listing.seller.display_name }}</strong><br>
-                            <span class="stock">
-                                {% if listing.quantity > 1 %}
-                                    {{ listing.quantity }} available
-                                {% else %}
-                                    In stock
-                                {% endif %}
-                            </span>
-                        </td>
-
-                        <td>
-                            {% if listing.format %}
-                                {{ listing.get_format_display }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
-
-                        <td>{{ listing.get_condition_display }}</td>
-
-                        <td class="price-cell">
-                            ${{ listing.price }}
-                            <div class="cart-placeholder">
-                                <button disabled>Add to cart</button>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </section>
+        {% if book.cover_image %}
+            <img
+                src="{{ book.cover_image.url }}"
+                alt="{{ book.title }}"
+                style="max-width:180px; margin: 1rem 0;"
+            >
         {% endif %}
 
-        <!-- DESCRIPTION -->
         <section class="book-description">
-            <h2 class="section-title">Description</h2>
-            <p>{{ book.description|default:"No description available for this edition." }}</p>
+            <h2>Description</h2>
+            <p>{{ book.description|default:"No description available." }}</p>
         </section>
 
-        <!-- METADATA -->
         <table class="meta-table">
             <tr><th>ISBN-10</th><td>{{ book.isbn10 }}</td></tr>
-            {% if book.amazon_asin %}
-                <tr><th>Amazon ASIN</th><td>{{ book.amazon_asin }}</td></tr>
-            {% endif %}
+            <tr><th>ISBN-13</th><td>{{ book.isbn13 }}</td></tr>
             <tr><th>Publisher</th><td>{{ book.publisher }} ({{ book.publication_year }})</td></tr>
-            <tr><th>Pages</th><td>{{ book.pages|default:"Unknown" }}</td></tr>
+            <tr><th>Pages</th><td>{{ book.pages|default:"—" }}</td></tr>
             <tr><th>Language</th><td>{{ book.language }}</td></tr>
         </table>
 
-        {% if book.preview_url %}
-        <a href="{{ book.preview_url }}" target="_blank" class="btn-secondary">
-            📖 Read Preview
-        </a>
+    </div>
+
+    <!-- RIGHT COLUMN: PRIMARY OFFER -->
+    <aside class="primary-offer">
+
+        {% if primary_listing %}
+        <div class="primary-price-title">  
+            Lowest-Priced Available Copy 
+        </div>
+
+            <div class="primary-price">
+                ${{ primary_listing.price }}
+            </div>
+
+            <div class="primary-meta">
+                <strong>{{ primary_listing.get_condition_display }}</strong><br>
+                {% if primary_listing.format %}
+                    {{ primary_listing.get_format_display }}<br>
+                {% endif %}
+                Sold by {{ primary_listing.seller.display_name }}
+                {% if primary_listing.seller.country %}
+                    <br><span class="seller-country">
+                        Ships from {{ primary_listing.seller.country }}
+                    </span>
+                {% endif %}
+                <p class="seller-policy-note">
+                    Orders are fulfilled directly by the seller.  
+                    Returns and refunds follow the seller’s stated policy.
+                </p>
+
+            </div>
+
+            <div class="primary-stock">
+                {% if primary_listing.quantity > 1 %}
+                    {{ primary_listing.quantity }} available
+                {% else %}
+                    In stock
+                {% endif %}
+            </div>
+
+            <button class="btn-primary" disabled>
+                Add to cart
+            </button>
+        {% else %}
+            <p>No copies currently available.</p>
         {% endif %}
 
-    </div>
+    </aside>
+
 </div>
+
+<!-- OTHER SELLERS -->
+{% if other_listings %}
+<section class="other-offers">
+
+    <h2>Other Sellers Offering This Book</h2>
+
+    <table class="copies-table">
+        <thead>
+            <tr>
+                <th>Seller</th>
+                <th>Format</th>
+                <th>Condition</th>
+                <th class="price-col">Price</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for listing in other_listings %}
+            <tr>
+                <td>{{ listing.seller.display_name }}</td>
+                <td>{{ listing.get_format_display|default:"—" }}</td>
+                <td>{{ listing.get_condition_display }}</td>
+                <td>${{ listing.price }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+</section>
+{% endif %}
+
 {% endblock %}
 
 
@@ -1621,26 +1642,46 @@ FILE: main\templates\main\base.html
         <!-- Primary nav -->
         <div class="base-header-outer">
             <div class="container">
-                <nav class="base-nav-row-bold">
-                    <a href="/search/advanced/" class="base-link">Advanced Search</a>
-                    <a href="/textbooks/" class="base-link">Textbooks</a>
-                    <a href="/rare-books/" class="base-link">Rare & Collectible</a>
-                    <a href="/sellers/" class="base-link">Our Sellers</a>
-                </nav>
+                <div class="base-nav-row-bold split">       
+
+                    <!-- LEFT -->
+                    <nav class="base-nav-left">
+                        <a href="/search/advanced/" class="base-link">Advanced Search</a>
+                        <a href="/textbooks/" class="base-link">Textbooks</a>
+                        <a href="/rare-books/" class="base-link">Rare & Collectible</a>
+                        <a href="/sellers/" class="base-link">Our Sellers</a>
+                    </nav>      
+
+                    <!-- RIGHT -->
+                    <a href="/sell/" class="base-sell-link">
+                        Sell with us!
+                    </a>        
+
+                </div>
             </div>
         </div>
 
         <!-- Secondary nav -->
-        <div class="base-header-outer" style="border-bottom:none;">
+         <div class="base-header-outer" style="border-bottom:none;">
             <div class="container">
-                <nav class="base-nav-row-slim">
-                    <a href="/categories/" class="base-link">Categories</a>
-                    <a href="/trending/" class="base-link">New & Trending</a>
-                    <a href="/deals/" class="base-link">Sales & Deals</a>
-                    <a href="/best-sellers/" class="base-link">Best Sellers</a>
-                </nav>
+                <div class="base-nav-row-slim split">
+
+                    <!-- LEFT: menu -->
+                    <nav class="base-nav-left">
+                        <a href="/categories/" class="base-link">Categories</a>
+                        <a href="/trending/" class="base-link">New & Trending</a>
+                        <a href="/deals/" class="base-link">Sales & Deals</a>
+                        <a href="/best-sellers/" class="base-link">Best Sellers</a>
+                    </nav>
+
+                    <!-- RIGHT: subtle marketplace note -->
+                    <div class="base-marketplace-note">
+                        Prices and Availability are set by our Independent Sellers.
+                    </div>
+
+                </div>
             </div>
-        </div>
+            </div>
 
         <!-- Ad banner -->
         <div class="base-ad-wrapper">
@@ -1746,6 +1787,13 @@ FILE: main\templates\main\home.html
         <strong>Browse books currently for sale →</strong>
     </a>
 </section>
+<section class="cta-section">
+    <p>
+        Are you a bookseller?
+        <a href="/sellers/">Learn how to list your inventory on Educated Owl Books.</a>
+    </p>
+</section>
+
 
 {% endblock %}
 
@@ -1762,7 +1810,7 @@ FILE: main\templates\main\partials\book_shelf.html
             <div class="book-item">
 
                 <div class="book-cover">
-                    <a href="{% url 'book_detail' book.isbn13 %}">
+                    <a href="{% url 'book_detail' book.isbn10|default:book.isbn13 %}">
                         <img src="{{ book.cover_image.url }}" alt="{{ book.title }}">
                     </a>
                 </div>
