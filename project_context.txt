@@ -1913,10 +1913,6 @@ FILE: main\templates\main\base.html
     <meta charset="utf-8">
     <title>{% block title %}Educated Owl Books{% endblock %}</title>
     
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100;200;300;400;600;700&display=swap" rel="stylesheet">
     <!-- Favicon -->   
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
     <!-- Font Awesome -->
@@ -2018,7 +2014,12 @@ FILE: main\templates\main\base.html
                 </div>
             </div>
             </div>
-
+        <!-- Retro marquee -->
+        <div class="retro-marquee">
+            <div class="retro-marquee-track">
+                [📖] ★ FEATURED CLASSIC ★ CALL OF THE WILD — JACK LONDON ★ AVAILABLE NOW ★
+            </div>
+        </div>    
         <!-- Ad banner -->
         <div class="base-ad-wrapper">
             <div class="container">

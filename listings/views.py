@@ -1,6 +1,9 @@
 from django.db.models import Q
-from django.shortcuts import render
 from .models import Listing
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from accounts.models import Seller
+from .services.inventory_import import import_inventory_csv
 
 
 def public_listings(request):
@@ -49,3 +52,19 @@ def public_listings(request):
             "query": query,
         },
     )
+@login_required
+def upload_inventory(request):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return render(request, "listings/not_a_seller.html")
+
+    context = {}
+
+    if request.method == "POST" and request.FILES.get("file"):
+        results = import_inventory_csv(
+            request.FILES["file"],
+            seller,
+        )
+        context["results"] = results
+
+    return render(request, "listings/upload_inventory.html", context)

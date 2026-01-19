@@ -12,7 +12,7 @@ def book_detail(request, identifier):
     listings_qs = (
         book.listings
         .select_related("seller")
-        .filter(quantity__gt=0)
+        .filter(status="active", quantity__gt=0)
         .order_by("price")
     )
 

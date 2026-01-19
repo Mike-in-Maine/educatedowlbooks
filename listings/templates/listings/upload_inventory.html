@@ -1,0 +1,54 @@
+{% extends "main/base.html" %}
+
+{% block title %}Upload Inventory{% endblock %}
+
+{% block content %}
+
+<h1>Upload Your Inventory</h1>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    <strong>No special CSV format required.</strong><br>
+    You don’t need to rename columns or prepare your file in any specific way.
+    Our system analyzes your CSV and recognizes common inventory fields
+    such as ISBN, title, author, price, condition, and quantity.
+</p>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    This is a short, one-time setup process:
+</p>
+
+<ol style="max-width: 700px; line-height: 1.5;">
+    <li>You upload a CSV file in any reasonable format.</li>
+    <li>We identify how each column is being used.</li>
+    <li>You review and confirm the mapping.</li>
+    <li>Once confirmed, we remember this structure for future uploads.</li>
+</ol>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    You can review or change your column mapping at any time.
+</p>
+
+<hr>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="file" required>
+    <button type="submit">Upload CSV</button>
+</form>
+
+{% if results %}
+    <hr>
+
+    <h3>Created Listings: {{ results.created|length }}</h3>
+    <h3>Errors: {{ results.errors|length }}</h3>
+
+    {% if results.errors %}
+        <ul>
+        {% for e in results.errors %}
+            <li>Row {{ e.row }} — {{ e.error }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+{% endif %}
+
+{% endblock %}
