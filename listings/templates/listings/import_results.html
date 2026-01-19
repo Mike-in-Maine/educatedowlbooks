@@ -1,0 +1,85 @@
+{% extends "main/base.html" %}
+
+{% block title %}Inventory Import Results{% endblock %}
+
+{% block content %}
+
+<h1>Inventory Import Complete</h1>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    Your inventory has been processed. Below is a summary of what was created
+    and any items that could not be imported.
+</p>
+
+<hr>
+
+<h3>Summary</h3>
+
+<ul>
+    <li><strong>Listings created:</strong> {{ results.created|length }}</li>
+    <li><strong>Errors:</strong> {{ results.errors|length }}</li>
+</ul>
+
+{% if results.created %}
+    <h3>Created Listings</h3>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Book</th>
+                <th>Price</th>
+                <th>Condition</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for listing in results.created %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        {{ listing.book.title }} — {{ listing.book.author }}
+                    </td>
+                    <td>${{ listing.price }}</td>
+                    <td>{{ listing.get_condition_display }}</td>
+                    <td>{{ listing.quantity }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% if results.errors %}
+    <h3 style="margin-top: 2rem;">Items Not Imported</h3>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Row</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for error in results.errors %}
+                <tr>
+                    <td>{{ error.row }}</td>
+                    <td>{{ error.error }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<hr>
+
+<p>
+    <a href="{% url 'upload_inventory' %}" class="btn btn-secondary">
+        Upload Another File
+    </a>
+
+    <a href="{% url 'public_listings' %}" class="btn btn-primary" style="margin-left: 10px;">
+        View Listings
+    </a>
+</p>
+
+{% endblock %}

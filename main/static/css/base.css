@@ -4,31 +4,37 @@
 
 @font-face {
     font-family: "Mulish";
-    src: url("/static/fonts/mulish/Mulish-Regular.woff2") format("woff2");
+    src: url("/static/fonts/mulish/Mulish-Regular.ttf") format("truetype");
     font-weight: 400;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "Mulish";
-    src: url("/static/fonts/mulish/Mulish-Medium.woff2") format("woff2");
+    src: url("/static/fonts/mulish/Mulish-Medium.ttf") format("truetype");
     font-weight: 500;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "Mulish";
-    src: url("/static/fonts/mulish/Mulish-SemiBold.woff2") format("woff2");
+    src: url("/static/fonts/mulish/Mulish-SemiBold.ttf") format("truetype");
     font-weight: 600;
     font-style: normal;
+    font-display: swap;
 }
 
 @font-face {
     font-family: "Mulish";
-    src: url("/static/fonts/mulish/Mulish-Bold.woff2") format("woff2");
+    src: url("/static/fonts/mulish/Mulish-Bold.ttf") format("truetype");
     font-weight: 700;
     font-style: normal;
+    font-display: swap;
 }
+
+
 
 /* =========================================================
    RESET & BASE TYPOGRAPHY

@@ -1,10 +1,16 @@
 from django.db.models import Q
-from .models import Listing
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from accounts.models import Seller
-from .services.inventory_import import import_inventory_csv
+from django.shortcuts import render, redirect, get_object_or_404
 
+from .models import Listing
+from accounts.models import Seller
+
+from .services.inventory_import import (analyze_inventory_csv,import_inventory_csv)
+
+
+# ============================================================
+# PUBLIC LISTINGS (BUYER VIEW)
+# ============================================================
 
 def public_listings(request):
     query = request.GET.get("q", "")
@@ -13,7 +19,11 @@ def public_listings(request):
     era = request.GET.get("era")
     special = request.GET.get("special")
 
-    listings = Listing.objects.select_related("book", "seller")
+    listings = (
+        Listing.objects
+        .select_related("book", "seller")
+        .filter(status="active", quantity__gt=0)
+    )
 
     if query:
         listings = listings.filter(
@@ -52,6 +62,12 @@ def public_listings(request):
             "query": query,
         },
     )
+
+
+# ============================================================
+# SELLER: UPLOAD INVENTORY (PREVIEW ONLY)
+# ============================================================
+
 @login_required
 def upload_inventory(request):
     seller = getattr(request.user, "seller_profile", None)
@@ -61,10 +77,105 @@ def upload_inventory(request):
     context = {}
 
     if request.method == "POST" and request.FILES.get("file"):
-        results = import_inventory_csv(
+        preview = analyze_inventory_csv(
             request.FILES["file"],
             seller,
         )
-        context["results"] = results
 
-    return render(request, "listings/upload_inventory.html", context)
+        # Store preview in session (JSON-safe)
+        request.session["inventory_preview"] = preview
+
+        context["preview"] = preview
+        context["awaiting_confirmation"] = True
+
+    return render(
+        request,
+        "listings/upload_inventory.html",
+        context,
+    )
+
+
+# ============================================================
+# SELLER: CONFIRM & IMPORT INVENTORY (DB WRITES)
+# ============================================================
+
+@login_required
+def confirm_inventory(request):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return redirect("upload_inventory")
+
+    preview = request.session.get("inventory_preview")
+    if not preview:
+        return redirect("upload_inventory")
+
+    if request.method == "POST":
+        results = import_inventory_csv(
+            preview,
+            seller,
+        )
+
+        # Clean up session
+        try:
+            del request.session["inventory_preview"]
+        except KeyError:
+            pass
+
+        return render(
+            request,
+            "listings/import_results.html",
+            {
+                "results": results,
+            },
+        )
+
+    return redirect("upload_inventory")
+
+
+# ============================================================
+# SELLER: MY LISTINGS (DRAFT + ACTIVE)
+# ============================================================
+
+@login_required
+def seller_listings(request):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return render(request, "listings/not_a_seller.html")
+
+    listings = (
+        Listing.objects
+        .select_related("book")
+        .filter(seller=seller)
+        .order_by("status", "-created_at")
+    )
+
+    return render(
+        request,
+        "listings/seller_listings.html",
+        {
+            "listings": listings,
+        },
+    )
+
+
+# ============================================================
+# SELLER: PUBLISH A DRAFT LISTING
+# ============================================================
+
+@login_required
+def publish_listing(request, listing_id):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return redirect("seller_listings")
+
+    listing = get_object_or_404(
+        Listing,
+        id=listing_id,
+        seller=seller,
+        status="draft",
+    )
+
+    listing.status = "active"
+    listing.save(update_fields=["status"])
+
+    return redirect("seller_listings")

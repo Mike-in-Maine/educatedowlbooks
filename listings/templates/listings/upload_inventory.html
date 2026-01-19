@@ -30,25 +30,68 @@
 
 <hr>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" style="margin-top: 1.5rem;">
     {% csrf_token %}
-    <input type="file" name="file" required>
-    <button type="submit">Upload CSV</button>
+
+    <div style="margin-bottom: 1rem;">
+        <label>
+            <strong>Select CSV file:</strong><br>
+            <input type="file" name="file" accept=".csv" required>
+        </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Upload CSV
+    </button>
 </form>
 
-{% if results %}
+{% if preview %}
     <hr>
 
-    <h3>Created Listings: {{ results.created|length }}</h3>
-    <h3>Errors: {{ results.errors|length }}</h3>
+    <h3>Inventory Preview</h3>
+    <p>
+        Please review how your inventory will be interpreted before publishing.
+    </p>
 
-    {% if results.errors %}
-        <ul>
-        {% for e in results.errors %}
-            <li>Row {{ e.row }} — {{ e.error }}</li>
-        {% endfor %}
-        </ul>
-    {% endif %}
+    <p>
+        <strong>Sample size:</strong> {{ preview.summary.sample_size }}<br>
+        <strong>Matched books:</strong> {{ preview.summary.matched_books }}<br>
+        <strong>Missing books:</strong> {{ preview.summary.missing_books }}
+    </p>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Row</th>
+                <th>ISBN</th>
+                <th>Matched Book</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in preview.rows %}
+                <tr>
+                    <td>{{ row.row }}</td>
+                    <td>
+                        {{ row.isbn10|default:row.isbn13 }}
+                    </td>
+                    <td>
+                        {% if row.book_id %}
+                            {{ row.book_title }} — {{ row.book_author }}
+                        {% else %}
+                            <span style="color: #b00020;">Not found</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form method="post" action="{% url 'confirm_inventory' %}" style="margin-top: 1.5rem;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">
+            Confirm & Publish Inventory
+        </button>
+    </form>
 {% endif %}
 
 {% endblock %}
