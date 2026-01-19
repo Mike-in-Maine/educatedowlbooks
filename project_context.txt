@@ -623,7 +623,7 @@ def book_detail(request, identifier):
     listings_qs = (
         book.listings
         .select_related("seller")
-        .filter(quantity__gt=0)
+        .filter(status="active", quantity__gt=0)
         .order_by("price")
     )
 
@@ -1329,6 +1329,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / "main" / "static"]
+  
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -1446,6 +1448,11 @@ class ListingAdmin(admin.ModelAdmin):
     )
     list_filter = ("condition", "seller")
     search_fields = ("book__title", "book__author", "seller__display_name")
+    actions = ["make_active"]
+
+    def make_active(self, request, queryset):
+        queryset.update(status="active")
+    make_active.short_description = "Publish selected listings"
 
 
 ====================
@@ -1477,9 +1484,16 @@ class Listing(models.Model):
     ]
 
     FORMAT_CHOICES = [
-    ("paperback", "Paperback"),
-    ("hardcover", "Hardcover"),
-    ("mass_market", "Mass Market Paperback"),
+        ("paperback", "Paperback"),
+        ("hardcover", "Hardcover"),
+        ("mass_market", "Mass Market Paperback"),
+    ]
+
+    STATUS_CHOICES = [
+        ("draft", "Draft"),
+        ("active", "Active"),
+        ("sold", "Sold"),
+        ("archived", "Archived"),
     ]
 
     seller = models.ForeignKey(
@@ -1492,6 +1506,12 @@ class Listing(models.Model):
         Book,
         on_delete=models.CASCADE,
         related_name="listings",
+    )
+
+    seller_sku = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Seller’s internal reference / SKU",
     )
 
     price = models.DecimalField(
@@ -1512,6 +1532,19 @@ class Listing(models.Model):
 
     quantity = models.PositiveIntegerField(default=1)
 
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="draft",
+        db_index=True,
+    )
+
+    created_from = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="csv, manual, api, etc.",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -1519,6 +1552,7 @@ class Listing(models.Model):
         indexes = [
             models.Index(fields=["price"]),
             models.Index(fields=["condition"]),
+            models.Index(fields=["status"]),
         ]
 
     def __str__(self):
@@ -1537,12 +1571,21 @@ from django.test import TestCase
 FILE: listings\urls.py
 ====================
 from django.urls import path
-from .views import public_listings
+from .views import *
 from . import views
 
 
 urlpatterns = [
+    # Public buyer view
     path("", public_listings, name="public_listings"),
+
+    # Seller inventory upload flow
+    path("upload/", upload_inventory, name="upload_inventory"),
+    path("upload/confirm/", confirm_inventory, name="confirm_inventory"),
+
+    # Seller listings dashboard
+    path("my-listings/", seller_listings, name="seller_listings"),
+    path("my-listings/publish/<int:listing_id>/",publish_listing,name="publish_listing",),
 ]
 
 
@@ -1550,9 +1593,18 @@ urlpatterns = [
 FILE: listings\views.py
 ====================
 from django.db.models import Q
-from django.shortcuts import render
-from .models import Listing
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
 
+from .models import Listing
+from accounts.models import Seller
+
+from .services.inventory_import import (analyze_inventory_csv,import_inventory_csv)
+
+
+# ============================================================
+# PUBLIC LISTINGS (BUYER VIEW)
+# ============================================================
 
 def public_listings(request):
     query = request.GET.get("q", "")
@@ -1561,7 +1613,11 @@ def public_listings(request):
     era = request.GET.get("era")
     special = request.GET.get("special")
 
-    listings = Listing.objects.select_related("book", "seller")
+    listings = (
+        Listing.objects
+        .select_related("book", "seller")
+        .filter(status="active", quantity__gt=0)
+    )
 
     if query:
         listings = listings.filter(
@@ -1602,9 +1658,393 @@ def public_listings(request):
     )
 
 
+# ============================================================
+# SELLER: UPLOAD INVENTORY (PREVIEW ONLY)
+# ============================================================
+
+@login_required
+def upload_inventory(request):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return render(request, "listings/not_a_seller.html")
+
+    context = {}
+
+    if request.method == "POST" and request.FILES.get("file"):
+        preview = analyze_inventory_csv(
+            request.FILES["file"],
+            seller,
+        )
+
+        # Store preview in session (JSON-safe)
+        request.session["inventory_preview"] = preview
+
+        context["preview"] = preview
+        context["awaiting_confirmation"] = True
+
+    return render(
+        request,
+        "listings/upload_inventory.html",
+        context,
+    )
+
+
+# ============================================================
+# SELLER: CONFIRM & IMPORT INVENTORY (DB WRITES)
+# ============================================================
+
+@login_required
+def confirm_inventory(request):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return redirect("upload_inventory")
+
+    preview = request.session.get("inventory_preview")
+    if not preview:
+        return redirect("upload_inventory")
+
+    if request.method == "POST":
+        results = import_inventory_csv(
+            preview,
+            seller,
+        )
+
+        # Clean up session
+        try:
+            del request.session["inventory_preview"]
+        except KeyError:
+            pass
+
+        return render(
+            request,
+            "listings/import_results.html",
+            {
+                "results": results,
+            },
+        )
+
+    return redirect("upload_inventory")
+
+
+# ============================================================
+# SELLER: MY LISTINGS (DRAFT + ACTIVE)
+# ============================================================
+
+@login_required
+def seller_listings(request):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return render(request, "listings/not_a_seller.html")
+
+    listings = (
+        Listing.objects
+        .select_related("book")
+        .filter(seller=seller)
+        .order_by("status", "-created_at")
+    )
+
+    return render(
+        request,
+        "listings/seller_listings.html",
+        {
+            "listings": listings,
+        },
+    )
+
+
+# ============================================================
+# SELLER: PUBLISH A DRAFT LISTING
+# ============================================================
+
+@login_required
+def publish_listing(request, listing_id):
+    seller = getattr(request.user, "seller_profile", None)
+    if not seller:
+        return redirect("seller_listings")
+
+    listing = get_object_or_404(
+        Listing,
+        id=listing_id,
+        seller=seller,
+        status="draft",
+    )
+
+    listing.status = "active"
+    listing.save(update_fields=["status"])
+
+    return redirect("seller_listings")
+
+
 ====================
 FILE: listings\__init__.py
 ====================
+
+
+====================
+FILE: listings\services\inventory_import.py
+====================
+import csv
+from io import TextIOWrapper
+from decimal import Decimal
+
+from catalog.models import Book
+from listings.models import Listing
+
+
+# ============================================================
+# NORMALIZATION HELPERS
+# ============================================================
+
+def normalize_condition(value):
+    if not value:
+        return "good"
+
+    value = value.lower().strip()
+    mapping = {
+        "new": "new",
+        "like new": "like_new",
+        "very good": "very_good",
+        "good": "good",
+        "acceptable": "acceptable",
+    }
+    return mapping.get(value, "good")
+
+
+def normalize_format(value):
+    if not value:
+        return ""
+
+    value = value.lower().strip()
+    mapping = {
+        "paperback": "paperback",
+        "hardcover": "hardcover",
+        "mass market": "mass_market",
+        "mass market paperback": "mass_market",
+    }
+    return mapping.get(value, "")
+
+
+# ============================================================
+# BOOK MATCHING (NO SIDE EFFECTS)
+# ============================================================
+
+def match_book_from_row(row):
+    isbn10 = (row.get("isbn10") or "").strip()
+    isbn13 = (row.get("isbn13") or "").strip()
+
+    if isbn10:
+        book = Book.objects.filter(isbn10=isbn10).first()
+        if book:
+            return book
+
+    if isbn13:
+        book = Book.objects.filter(isbn13=isbn13).first()
+        if book:
+            return book
+
+    return None
+
+
+# ============================================================
+# PHASE 1 — ANALYZE CSV (PREVIEW ONLY, SESSION SAFE)
+# ============================================================
+
+def analyze_inventory_csv(file, seller):
+    """
+    Reads CSV and prepares a preview.
+    NO database writes.
+    NO model instances stored in session.
+    """
+
+    wrapper = TextIOWrapper(file, encoding="utf-8")
+    reader = csv.DictReader(wrapper)
+
+    headers = reader.fieldnames or []
+
+    preview_rows = []
+    matched_books = 0
+    missing_books = 0
+
+    for idx, row in enumerate(reader, start=1):
+        if idx > 10:  # preview first 10 rows only
+            break
+
+        book = match_book_from_row(row)
+
+        if book:
+            matched_books += 1
+        else:
+            missing_books += 1
+
+        preview_rows.append({
+            "row": idx,
+            "raw": row,  # raw CSV row (dict of strings)
+            "book_id": book.id if book else None,
+            "book_title": book.title if book else None,
+            "book_author": book.author if book else None,
+            "isbn10": row.get("isbn10", ""),
+            "isbn13": row.get("isbn13", ""),
+        })
+
+    return {
+        "headers": headers,
+        "rows": preview_rows,
+        "summary": {
+            "sample_size": len(preview_rows),
+            "matched_books": matched_books,
+            "missing_books": missing_books,
+        },
+    }
+
+
+# ============================================================
+# PHASE 2 — IMPORT INVENTORY (DB WRITES)
+# ============================================================
+
+def import_inventory_csv(preview, seller):
+    """
+    Creates listings from a confirmed preview.
+    """
+
+    results = {
+        "created": [],
+        "errors": [],
+    }
+
+    for item in preview["rows"]:
+        row = item["raw"]
+        book_id = item.get("book_id")
+
+        book = None
+        if book_id:
+            book = Book.objects.filter(id=book_id).first()
+
+        if not book:
+            results["errors"].append({
+                "row": item["row"],
+                "error": "Book not found",
+                "data": row,
+            })
+            continue
+
+        try:
+            listing = Listing.objects.create(
+                seller=seller,
+                book=book,
+                seller_sku=(row.get("seller_sku") or "").strip(),
+                price=Decimal(row.get("price")),
+                condition=normalize_condition(row.get("condition")),
+                format=normalize_format(row.get("format")),
+                quantity=int(row.get("quantity", 1)),
+                status="draft",
+                created_from="csv",
+            )
+
+            results["created"].append(listing)
+
+        except Exception as e:
+            results["errors"].append({
+                "row": item["row"],
+                "error": str(e),
+                "data": row,
+            })
+
+    return results
+
+
+====================
+FILE: listings\services\__init__.py
+====================
+
+
+====================
+FILE: listings\templates\listings\import_results.html
+====================
+{% extends "main/base.html" %}
+
+{% block title %}Inventory Import Results{% endblock %}
+
+{% block content %}
+
+<h1>Inventory Import Complete</h1>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    Your inventory has been processed. Below is a summary of what was created
+    and any items that could not be imported.
+</p>
+
+<hr>
+
+<h3>Summary</h3>
+
+<ul>
+    <li><strong>Listings created:</strong> {{ results.created|length }}</li>
+    <li><strong>Errors:</strong> {{ results.errors|length }}</li>
+</ul>
+
+{% if results.created %}
+    <h3>Created Listings</h3>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Book</th>
+                <th>Price</th>
+                <th>Condition</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for listing in results.created %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        {{ listing.book.title }} — {{ listing.book.author }}
+                    </td>
+                    <td>${{ listing.price }}</td>
+                    <td>{{ listing.get_condition_display }}</td>
+                    <td>{{ listing.quantity }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% if results.errors %}
+    <h3 style="margin-top: 2rem;">Items Not Imported</h3>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Row</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for error in results.errors %}
+                <tr>
+                    <td>{{ error.row }}</td>
+                    <td>{{ error.error }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<hr>
+
+<p>
+    <a href="{% url 'upload_inventory' %}" class="btn btn-secondary">
+        Upload Another File
+    </a>
+
+    <a href="{% url 'public_listings' %}" class="btn btn-primary" style="margin-left: 10px;">
+        View Listings
+    </a>
+</p>
+
+{% endblock %}
 
 
 ====================
@@ -1723,6 +2163,108 @@ FILE: listings\templates\listings\public_listings.html
 {% empty %}
     <p>No books found.</p>
 {% endfor %}
+
+{% endblock %}
+
+
+====================
+FILE: listings\templates\listings\upload_inventory.html
+====================
+{% extends "main/base.html" %}
+
+{% block title %}Upload Inventory{% endblock %}
+
+{% block content %}
+
+<h1>Upload Your Inventory</h1>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    <strong>No special CSV format required.</strong><br>
+    You don’t need to rename columns or prepare your file in any specific way.
+    Our system analyzes your CSV and recognizes common inventory fields
+    such as ISBN, title, author, price, condition, and quantity.
+</p>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    This is a short, one-time setup process:
+</p>
+
+<ol style="max-width: 700px; line-height: 1.5;">
+    <li>You upload a CSV file in any reasonable format.</li>
+    <li>We identify how each column is being used.</li>
+    <li>You review and confirm the mapping.</li>
+    <li>Once confirmed, we remember this structure for future uploads.</li>
+</ol>
+
+<p style="max-width: 700px; line-height: 1.5;">
+    You can review or change your column mapping at any time.
+</p>
+
+<hr>
+
+<form method="post" enctype="multipart/form-data" style="margin-top: 1.5rem;">
+    {% csrf_token %}
+
+    <div style="margin-bottom: 1rem;">
+        <label>
+            <strong>Select CSV file:</strong><br>
+            <input type="file" name="file" accept=".csv" required>
+        </label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Upload CSV
+    </button>
+</form>
+
+{% if preview %}
+    <hr>
+
+    <h3>Inventory Preview</h3>
+    <p>
+        Please review how your inventory will be interpreted before publishing.
+    </p>
+
+    <p>
+        <strong>Sample size:</strong> {{ preview.summary.sample_size }}<br>
+        <strong>Matched books:</strong> {{ preview.summary.matched_books }}<br>
+        <strong>Missing books:</strong> {{ preview.summary.missing_books }}
+    </p>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Row</th>
+                <th>ISBN</th>
+                <th>Matched Book</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in preview.rows %}
+                <tr>
+                    <td>{{ row.row }}</td>
+                    <td>
+                        {{ row.isbn10|default:row.isbn13 }}
+                    </td>
+                    <td>
+                        {% if row.book_id %}
+                            {{ row.book_title }} — {{ row.book_author }}
+                        {% else %}
+                            <span style="color: #b00020;">Not found</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form method="post" action="{% url 'confirm_inventory' %}" style="margin-top: 1.5rem;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success">
+            Confirm & Publish Inventory
+        </button>
+    </form>
+{% endif %}
 
 {% endblock %}
 
@@ -1918,6 +2460,10 @@ FILE: main\templates\main\base.html
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:wght@400;600;700&display=swap" rel="stylesheet">
 
     {% block extra_css %}{% endblock %}
 </head>
