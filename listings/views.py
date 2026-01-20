@@ -4,8 +4,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 
 from .models import Listing
 from accounts.models import Seller
+from accounts.utils import seller_required
 
 from .services.inventory_import import (analyze_inventory_csv,import_inventory_csv)
+from accounts.utils import seller_required
+
 
 
 # ============================================================
@@ -69,6 +72,7 @@ def public_listings(request):
 # ============================================================
 
 @login_required
+@seller_required
 def upload_inventory(request):
     seller = getattr(request.user, "seller_profile", None)
     if not seller:
@@ -100,6 +104,7 @@ def upload_inventory(request):
 # ============================================================
 
 @login_required
+@seller_required
 def confirm_inventory(request):
     seller = getattr(request.user, "seller_profile", None)
     if not seller:
@@ -137,6 +142,7 @@ def confirm_inventory(request):
 # ============================================================
 
 @login_required
+@seller_required
 def seller_listings(request):
     seller = getattr(request.user, "seller_profile", None)
     if not seller:
@@ -154,6 +160,7 @@ def seller_listings(request):
         "listings/seller_listings.html",
         {
             "listings": listings,
+            "query": request.GET.get("q", ""),
         },
     )
 
@@ -163,6 +170,7 @@ def seller_listings(request):
 # ============================================================
 
 @login_required
+@seller_required
 def publish_listing(request, listing_id):
     seller = getattr(request.user, "seller_profile", None)
     if not seller:

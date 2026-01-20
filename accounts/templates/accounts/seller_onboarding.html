@@ -1,0 +1,39 @@
+{% extends "main/base.html" %}
+
+{% block title %}Start Selling | Educated Owl Books{% endblock %}
+
+{% block content %}
+<h1>Start Selling on Educated Owl Books</h1>
+
+<p style="max-width: 600px; line-height: 1.5;">
+    Start selling in under a minute.
+    No contracts. No exclusivity.
+    Add more details later when you’re ready.
+</p>
+
+<form method="post" style="max-width: 400px;">
+    {% csrf_token %}
+
+    <label>
+        <strong>Bookstore name</strong><br>
+        {{ form.display_name }}
+    </label>
+
+    <br><br>
+
+    <label>
+        <strong>Country</strong><br>
+        {{ form.country }}
+    </label>
+
+    <br><br>
+
+    <button class="btn btn-primary">
+        Create Seller Account
+    </button>
+</form>
+
+<p style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+    You can change these details anytime.
+</p>
+{% endblock %}
