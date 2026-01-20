@@ -34,6 +34,7 @@ def home(request):
         }
     )
 def categories(request):
+
     categories = [
         "Fiction",
         "Literature & Fiction",
@@ -118,3 +119,5 @@ def categories(request):
             "reader_favorites": reader_favorites,
         },
     )
+def help_page(request):
+    return render(request, "main/help.html")

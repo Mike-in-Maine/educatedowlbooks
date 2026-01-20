@@ -7,131 +7,169 @@
     
     <!-- Favicon -->   
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
 
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
 
 <div class="page-wrapper">
 
-    <header>
+<header>
 
-        <!-- Top row -->
-        <div class="base-header-outer">
-            <div class="container base-nav-primary">
+    <!-- Top row -->
+    <div class="base-header-outer">
+        <div class="container base-nav-primary">
 
+            <!-- Logo -->
+            <a href="/" class="base-logo-link">
+                <img src="{% static 'images/modern_logo.png' %}" alt="Logo" height="45">
+                <div class="base-site-title">
+                    <h1>Educated Owl Books</h1>
+                </div>
+            </a>
 
-                <a href="/" class="base-logo-link">
-                    <img src="{% static 'images/modern_logo.png' %}" alt="Logo" height="45">
-                    <div class="base-site-title">
-                        <h1>Educated Owl Books</h1>
-                    </div>
+            <!-- Search -->
+            <div class="base-search-bar">
+                <form action="/search/" method="get">
+                    <input type="text" name="q"
+                           placeholder="Search by title, author, or ISBN…">
+                    <button type="submit">SEARCH</button>
+                </form>
+            </div>
+
+            <!-- User menu (AUTH-AWARE) -->
+            <div class="base-user-menu">
+
+                <select class="base-lang-select">
+                    <option>EN</option>
+                    <option>ES</option>
+                    <option>FR</option>
+                    <option>DE</option>
+                    <option>IT</option>
+                    <option>JA</option>
+                    <option>KO</option>
+                    <option>PT</option>
+                    <option>RU</option>
+                </select>
+
+                <!-- HELP (always visible) -->
+                <a href="/help/" class="base-link">Help</a>
+
+                {% if user.is_authenticated %}
+
+                    {% if user.seller_profile %}
+                        <a href="{% url 'seller_listings' %}" class="base-link">
+                            My Listings
+                        </a>
+                    {% else %}
+                        <a href="/accounts/onboarding/" class="base-link">
+                            Sell with us
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'logout' %}" class="base-link">
+                        Sign out
+                    </a>
+
+                {% else %}
+
+                    <a href="{% url 'login' %}" class="base-link">
+                        Sign In
+                    </a>
+
+                    <a href="{% url 'login' %}" class="base-link">
+                        Register
+                    </a>
+
+                {% endif %}
+
+                <a href="/cart/" class="base-link">
+                    <i class="fa-solid fa-cart-shopping"></i> (0)
                 </a>
 
-                <div class="base-search-bar">
-                    <form action="/search/" method="get">
-                        <input type="text" name="q" placeholder="Search by title, author, or ISBN…">
-                        <button type="submit">SEARCH</button>
-                    </form>
-                </div>
-
-                <div class="base-user-menu">
-                    <select class="base-lang-select">
-                        <option>EN</option>
-                        <option>ES</option>
-                        <option>FR</option>
-                        <option>DE</option>
-                        <option>IT</option>
-                        <option>JA</option>
-                        <option>KO</option>
-                        <option>PT</option>
-                        <option>RU</option>
-                    </select>
-                    <a href="/login/" class="base-link">Sign In</a>
-                    <a href="/login/" class="base-link">Register</a>
-                    <a href="/cart/" class="base-link">
-                        <i class="fa-solid fa-cart-shopping"></i> (0)
-                    </a>
                 <button class="mobile-menu-toggle" aria-label="Open menu">
                     <i class="fa-solid fa-bars"></i>
                 </button>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Primary nav -->
+    <div class="base-header-outer">
+        <div class="container">
+            <div class="base-nav-row-bold split">
+
+                <!-- LEFT -->
+                <nav class="base-nav-left">
+                    <a href="/search/advanced/" class="base-link">Advanced Search</a>
+                    <a href="/textbooks/" class="base-link">Textbooks</a>
+                    <a href="/rare-books/" class="base-link">Rare & Collectible</a>
+                    <a href="/sellers/" class="base-link">Our Sellers</a>
+                </nav>
+
+                <!-- RIGHT CTA -->
+                <a href="/accounts/onboarding/" class="base-sell-link">
+                    Sell with us!
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Secondary nav -->
+    <div class="base-header-outer" style="border-bottom:none;">
+        <div class="container">
+            <div class="base-nav-row-slim split">
+
+                <nav class="base-nav-left">
+                    <a href="/categories/" class="base-link">Categories</a>
+                    <a href="/trending/" class="base-link">New & Trending</a>
+                    <a href="/deals/" class="base-link">Sales & Deals</a>
+                    <a href="/best-sellers/" class="base-link">Best Sellers</a>
+                </nav>
+
+                <div class="base-marketplace-note">
+                    Prices and Availability are set by our Independent Sellers.
                 </div>
 
             </div>
         </div>
+    </div>
 
-        <!-- Primary nav -->
-        <div class="base-header-outer">
-            <div class="container">
-                <div class="base-nav-row-bold split">       
+    <!-- Retro marquee -->
+    <div class="retro-marquee">
+        <div class="retro-marquee-track">
+            [📖] ★ FEATURED CLASSIC ★ CALL OF THE WILD — JACK LONDON ★ AVAILABLE NOW ★
+        </div>
+    </div>
 
-                    <!-- LEFT -->
-                    <nav class="base-nav-left">
-                        <a href="/search/advanced/" class="base-link">Advanced Search</a>
-                        <a href="/textbooks/" class="base-link">Textbooks</a>
-                        <a href="/rare-books/" class="base-link">Rare & Collectible</a>
-                        <a href="/sellers/" class="base-link">Our Sellers</a>
-                    </nav>      
-
-                    <!-- RIGHT -->
-                    <a href="/accounts/onboarding/" class="base-sell-link">
-                        Sell with us!
-                    </a>        
-
-                </div>
+    <!-- Ad banner -->
+    <div class="base-ad-wrapper">
+        <div class="container">
+            <div class="base-ad-content">
+                ADVERTISEMENT BANNER SPACE
             </div>
         </div>
+    </div>
 
-        <!-- Secondary nav -->
-         <div class="base-header-outer" style="border-bottom:none;">
-            <div class="container">
-                <div class="base-nav-row-slim split">
+</header>
 
-                    <!-- LEFT: menu -->
-                    <nav class="base-nav-left">
-                        <a href="/categories/" class="base-link">Categories</a>
-                        <a href="/trending/" class="base-link">New & Trending</a>
-                        <a href="/deals/" class="base-link">Sales & Deals</a>
-                        <a href="/best-sellers/" class="base-link">Best Sellers</a>
-                    </nav>
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
 
-                    <!-- RIGHT: subtle marketplace note -->
-                    <div class="base-marketplace-note">
-                        Prices and Availability are set by our Independent Sellers.
-                    </div>
-
-                </div>
-            </div>
-            </div>
-        <!-- Retro marquee -->
-        <div class="retro-marquee">
-            <div class="retro-marquee-track">
-                [📖] ★ FEATURED CLASSIC ★ CALL OF THE WILD — JACK LONDON ★ AVAILABLE NOW ★
-            </div>
-        </div>    
-        <!-- Ad banner -->
-        <div class="base-ad-wrapper">
-            <div class="container">
-                <div class="base-ad-content">
-                    ADVERTISEMENT BANNER SPACE
-                </div>
-            </div>
-        </div>
-
-    </header>
-
-    <main class="container">
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="container">
-        © {% now "Y" %} Educated Owl Books
-    </footer>
+<footer class="container">
+    © {% now "Y" %} Educated Owl Books
+</footer>
 
 </div>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const toggle = document.querySelector(".mobile-menu-toggle");

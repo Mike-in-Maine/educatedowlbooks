@@ -1,0 +1,31 @@
+{% extends "main/base.html" %}
+
+{% block title %}Sign In | Educated Owl Books{% endblock %}
+
+{% block content %}
+<h1>Sign in</h1>
+
+<p style="max-width: 600px; line-height: 1.5;">
+    Sign in to your Educated Owl Books account.
+</p>
+
+<form method="post" style="max-width: 400px;">
+    {% csrf_token %}
+
+    {% if form.errors %}
+        <div style="color:#b00020; margin-bottom: 1rem;">
+            Invalid username or password.
+        </div>
+    {% endif %}
+
+    <div style="margin-bottom: 1rem;">
+        <label><strong>Username</strong><br>{{ form.username }}</label>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+        <label><strong>Password</strong><br>{{ form.password }}</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Sign In</button>
+</form>
+{% endblock %}
