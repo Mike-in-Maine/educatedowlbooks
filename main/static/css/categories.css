@@ -4,7 +4,7 @@
 }
 
 .categories-page h1 {
-    font-weight: 500;
+    font-weight:  100;
     margin-bottom: 0.4rem;
 }
 
@@ -19,19 +19,19 @@
 .category-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 22px;
+    gap: 10px;
 }
 
 /* Card */
 .category-card {
     border: 1px solid #e6e6e6;
-    padding: 22px 20px;
+    padding: 3px 3px;
     background: #fff;
     transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .category-card h3 {
-    font-weight: 400;
+    font-weight: 100;
     font-size: 1.05rem;
     margin: 0;
     line-height: 1.35;
@@ -45,7 +45,7 @@
 }
 .categories-page h2 {
     margin: 2.8rem 0 1.2rem;
-    font-weight: 400;
+    font-weight: 100;
 }
 .category-card h3 {
     letter-spacing: 0.01em;
